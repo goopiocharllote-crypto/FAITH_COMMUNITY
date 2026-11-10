@@ -10,7 +10,7 @@
         }
     },
     "routes": [
-        { "handle": "filesystem" },
+        { "src": "/(build/.*|images/.*|favicon\\.ico|robots\\.txt)", "dest": "/$1" },
         { "src": "/(.*)", "dest": "/api/index.php" }
     ],
     "env": {
