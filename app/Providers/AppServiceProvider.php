@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Payments\Gateways\PayMongoGateway;
 use App\Payments\Gateways\SimulatedGateway;
 use App\Payments\PaymentGateway;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -30,5 +31,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         View::addNamespace('user-components', resource_path('users/components'));
+
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }

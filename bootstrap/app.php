@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Vercel terminates HTTPS at its proxy; trust its X-Forwarded-* headers
+        // so generated URLs (CSS/JS assets, redirects) use https://.
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
         ]);
