@@ -44,35 +44,47 @@
                     <p class="mt-2 text-sm leading-6 text-slate-500">Fill in your details to join the community.</p>
                 </div>
 
-                <form method="POST" action="{{ route('register.store') }}" autocomplete="on" class="space-y-4">
+                @php
+                    $fieldClass = fn (string $field, string $padding = 'pl-12 pr-4') => 'block w-full rounded-xl !bg-white py-3.5 '.$padding.' !text-slate-900 shadow-sm outline-none transition placeholder:!text-slate-400 focus:ring-4 '
+                        .($errors->has($field) ? '!border-red-400 focus:!border-red-500 focus:!ring-red-100' : 'border-slate-300 focus:border-blue-600 focus:ring-blue-100');
+                @endphp
+
+                @if ($errors->any())
+                    <div role="alert" class="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <x-heroicon-o-exclamation-circle class="mt-0.5 h-5 w-5 shrink-0" />
+                        <p>Please fix the highlighted {{ $errors->count() === 1 ? 'field' : 'fields' }} below and try again.</p>
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('register.store') }}" autocomplete="on" data-register-form class="space-y-4">
                     @csrf
 
                     <div>
-                        <label for="name" class="mb-2 block text-sm font-semibold text-slate-700">Name</label>
+                        <label for="name" class="mb-2 block text-sm font-semibold text-slate-700">Full name</label>
                         <div class="relative">
                             <x-heroicon-o-user class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                            <x-text-input id="name" type="text" name="name" value="{{ old('name') }}" required autocomplete="name" placeholder="Enter your name" class="block w-full rounded-xl border-slate-300 !bg-white py-3.5 pl-12 pr-4 !text-slate-900 shadow-sm outline-none transition placeholder:!text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100" />
+                            <x-text-input id="name" type="text" name="name" value="{{ old('name') }}" required minlength="2" maxlength="100" autocomplete="name" placeholder="Juan Dela Cruz" aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}" aria-describedby="name-error" class="{{ $fieldClass('name') }}" />
                         </div>
-                        <x-input-error :messages="$errors->get('name')" class="mt-1.5" />
+                        <x-input-error id="name-error" :messages="$errors->get('name')" class="mt-1.5" />
                     </div>
 
                     <div>
                         <label for="email" class="mb-2 block text-sm font-semibold text-slate-700">Email address</label>
                         <div class="relative">
                             <x-heroicon-o-envelope class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                            <x-text-input id="email" type="email" name="email" value="{{ old('email') }}" required autocomplete="email" placeholder="you@example.com" class="block w-full rounded-xl border-slate-300 !bg-white py-3.5 pl-12 pr-4 !text-slate-900 shadow-sm outline-none transition placeholder:!text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100" />
+                            <x-text-input id="email" type="email" name="email" value="{{ old('email') }}" required maxlength="255" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com" aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}" aria-describedby="email-error" class="{{ $fieldClass('email') }}" />
                         </div>
-                        <x-input-error :messages="$errors->get('email')" class="mt-1.5" />
+                        <x-input-error id="email-error" :messages="$errors->get('email')" class="mt-1.5" />
                     </div>
 
                     <div>
                         <label for="mobile" class="mb-2 block text-sm font-semibold text-slate-700">Mobile number</label>
                         <div class="flex">
                             <span class="inline-flex items-center rounded-l-xl border border-r-0 border-slate-300 bg-slate-50 px-4 text-sm font-medium text-slate-600">+63</span>
-                            <x-text-input id="mobile" type="text" name="mobile" value="{{ old('mobile') }}" required maxlength="10" inputmode="numeric" pattern="9[0-9]{9}" autocomplete="tel-national" placeholder="9XXXXXXXXX" class="block min-w-0 w-full rounded-l-none rounded-r-xl border-slate-300 !bg-white py-3.5 px-4 !text-slate-900 shadow-sm outline-none transition placeholder:!text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100" />
+                            <x-text-input id="mobile" type="tel" name="mobile" value="{{ old('mobile') }}" required maxlength="16" inputmode="tel" autocomplete="tel-national" placeholder="9XXXXXXXXX" aria-invalid="{{ $errors->has('mobile') ? 'true' : 'false' }}" aria-describedby="mobile-hint mobile-error" class="{{ $fieldClass('mobile', 'px-4') }} min-w-0 rounded-l-none rounded-r-xl" />
                         </div>
-                        <p class="mt-1.5 text-xs text-slate-500">Enter 10 digits, starting with 9. Example: 9171234567</p>
-                        <x-input-error :messages="$errors->get('mobile')" class="mt-1.5" />
+                        <p id="mobile-hint" class="mt-1.5 text-xs text-slate-500">10 digits starting with 9, e.g. 9171234567. You can also type 09171234567.</p>
+                        <x-input-error id="mobile-error" :messages="$errors->get('mobile')" class="mt-1.5" />
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2">
@@ -80,26 +92,42 @@
                             <label for="password" class="mb-2 block text-sm font-semibold text-slate-700">Password</label>
                             <div class="relative">
                                 <x-heroicon-o-lock-closed class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                                <x-text-input id="password" type="password" name="password" required autocomplete="new-password" placeholder="Create a password" class="block w-full rounded-xl border-slate-300 !bg-white py-3.5 pl-12 pr-4 !text-slate-900 shadow-sm outline-none transition placeholder:!text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100" />
+                                <x-text-input id="password" type="password" name="password" required minlength="8" maxlength="72" autocomplete="new-password" placeholder="Create a password" aria-invalid="{{ $errors->has('password') ? 'true' : 'false' }}" aria-describedby="password-rules password-error" class="{{ $fieldClass('password', 'pl-12 pr-12') }}" />
+                                <button type="button" data-password-toggle="password" aria-label="Show password" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <span data-password-icon-show><x-heroicon-o-eye class="h-5 w-5" /></span>
+                                    <span data-password-icon-hide class="hidden"><x-heroicon-o-eye-slash class="h-5 w-5" /></span>
+                                </button>
                             </div>
-                            <x-input-error :messages="$errors->get('password')" class="mt-1.5" />
+                            <x-input-error id="password-error" :messages="$errors->get('password')" class="mt-1.5" />
                         </div>
 
                         <div>
                             <label for="password_confirmation" class="mb-2 block text-sm font-semibold text-slate-700">Confirm password</label>
                             <div class="relative">
                                 <x-heroicon-o-lock-closed class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                                <x-text-input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="Repeat password" class="block w-full rounded-xl border-slate-300 !bg-white py-3.5 pl-12 pr-4 !text-slate-900 shadow-sm outline-none transition placeholder:!text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100" />
+                                <x-text-input id="password_confirmation" type="password" name="password_confirmation" required maxlength="72" autocomplete="new-password" placeholder="Repeat password" aria-describedby="password-match" class="{{ $fieldClass('password_confirmation', 'pl-12 pr-12') }}" />
+                                <button type="button" data-password-toggle="password_confirmation" aria-label="Show password" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <span data-password-icon-show><x-heroicon-o-eye class="h-5 w-5" /></span>
+                                    <span data-password-icon-hide class="hidden"><x-heroicon-o-eye-slash class="h-5 w-5" /></span>
+                                </button>
                             </div>
-                            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1.5" />
+                            <p id="password-match" data-password-match class="mt-1.5 hidden text-xs" aria-live="polite"></p>
                         </div>
                     </div>
 
-                    <button type="submit" class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 py-3.5 font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200">
-                        Create account
+                    <ul id="password-rules" data-password-rules class="grid gap-1 rounded-xl bg-slate-50 px-4 py-3 text-xs text-slate-500 sm:grid-cols-2" aria-label="Password requirements">
+                        <li data-rule="length" class="flex items-center gap-2"><span data-rule-dot class="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300"></span>At least 8 characters</li>
+                        <li data-rule="upper" class="flex items-center gap-2"><span data-rule-dot class="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300"></span>An uppercase letter</li>
+                        <li data-rule="lower" class="flex items-center gap-2"><span data-rule-dot class="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300"></span>A lowercase letter</li>
+                        <li data-rule="number" class="flex items-center gap-2"><span data-rule-dot class="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300"></span>A number</li>
+                    </ul>
+
+                    <button type="submit" data-register-submit class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 py-3.5 font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-wait disabled:opacity-70">
+                        <span data-submit-label>Create account</span>
                         <x-heroicon-o-arrow-right class="h-5 w-5" />
                     </button>
                 </form>
+
 
                 <p class="mt-6 text-center text-sm text-slate-600">
                     Already have an account?

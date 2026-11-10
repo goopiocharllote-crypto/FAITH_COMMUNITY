@@ -88,7 +88,8 @@ if (navLinks.length > 0) {
 
 document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
     toggle.addEventListener('click', () => {
-        const password = document.getElementById('password');
+        // data-password-toggle="<input id>" targets a specific field; empty falls back to #password.
+        const password = document.getElementById(toggle.dataset.passwordToggle || 'password');
         const showIcon = toggle.querySelector('[data-password-icon-show]');
         const hideIcon = toggle.querySelector('[data-password-icon-hide]');
 
@@ -103,3 +104,102 @@ document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
         toggle.setAttribute('aria-label', isVisible ? 'Hide password' : 'Show password');
     });
 });
+
+// Registration form: live password checklist, match hint and double-submit guard.
+const registerForm = document.querySelector('[data-register-form]');
+
+if (registerForm instanceof HTMLFormElement) {
+    const password = registerForm.querySelector('#password');
+    const confirmation = registerForm.querySelector('#password_confirmation');
+    const matchHint = registerForm.querySelector('[data-password-match]');
+    const submit = registerForm.querySelector('[data-register-submit]');
+    const submitLabel = registerForm.querySelector('[data-submit-label]');
+    const mobile = registerForm.querySelector('#mobile');
+
+    const rules = {
+        length: (value) => value.length >= 8,
+        upper: (value) => /\p{Lu}/u.test(value),
+        lower: (value) => /\p{Ll}/u.test(value),
+        number: (value) => /\d/.test(value),
+    };
+
+    const updateRules = () => {
+        if (!(password instanceof HTMLInputElement)) {
+            return;
+        }
+
+        Object.entries(rules).forEach(([name, test]) => {
+            const item = registerForm.querySelector(`[data-rule="${name}"]`);
+            const dot = item?.querySelector('[data-rule-dot]');
+            const passed = test(password.value);
+
+            item?.classList.toggle('text-emerald-700', passed);
+            item?.classList.toggle('text-slate-500', !passed);
+            dot?.classList.toggle('bg-emerald-500', passed);
+            dot?.classList.toggle('bg-slate-300', !passed);
+        });
+    };
+
+    const updateMatch = () => {
+        if (!(password instanceof HTMLInputElement) || !(confirmation instanceof HTMLInputElement) || !(matchHint instanceof HTMLElement)) {
+            return;
+        }
+
+        if (confirmation.value === '') {
+            matchHint.classList.add('hidden');
+            confirmation.setCustomValidity('');
+
+            return;
+        }
+
+        const matches = confirmation.value === password.value;
+        matchHint.textContent = matches ? 'Passwords match.' : 'Passwords do not match yet.';
+        matchHint.classList.remove('hidden');
+        matchHint.classList.toggle('text-emerald-700', matches);
+        matchHint.classList.toggle('text-red-600', !matches);
+        confirmation.setCustomValidity(matches ? '' : 'The passwords do not match.');
+    };
+
+    password?.addEventListener('input', () => {
+        updateRules();
+        updateMatch();
+    });
+    confirmation?.addEventListener('input', updateMatch);
+
+    // Keep only characters that can appear in a phone number.
+    mobile?.addEventListener('input', () => {
+        if (mobile instanceof HTMLInputElement) {
+            mobile.value = mobile.value.replace(/[^\d+\s\-()]/g, '');
+        }
+    });
+
+    registerForm.addEventListener('submit', (event) => {
+        if (!registerForm.checkValidity()) {
+            event.preventDefault();
+            registerForm.reportValidity();
+
+            return;
+        }
+
+        if (submit instanceof HTMLButtonElement) {
+            submit.disabled = true;
+        }
+
+        if (submitLabel instanceof HTMLElement) {
+            submitLabel.textContent = 'Creating account…';
+        }
+    });
+
+    // Restore the button if the page is shown again from the back/forward cache.
+    window.addEventListener('pageshow', () => {
+        if (submit instanceof HTMLButtonElement) {
+            submit.disabled = false;
+        }
+
+        if (submitLabel instanceof HTMLElement) {
+            submitLabel.textContent = 'Create account';
+        }
+    });
+
+    updateRules();
+}

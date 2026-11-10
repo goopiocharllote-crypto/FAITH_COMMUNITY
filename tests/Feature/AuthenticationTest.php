@@ -364,4 +364,206 @@ class AuthenticationTest extends TestCase
 
         $this->assertGuest();
     }
+
+    public function test_registration_normalizes_name_email_and_mobile(): void
+    {
+        $this->post(route('register.store'), [
+            'name' => '  María   Dela Cruz-Santos ',
+            'email' => '  Maria.Santos@Example.COM ',
+            'mobile' => '+63 917-123-4567',
+            'password' => 'ParishPassword123',
+            'password_confirmation' => 'ParishPassword123',
+        ])->assertRedirect(route('dashboard'));
+
+        $user = User::firstOrFail();
+
+        $this->assertSame('María Dela Cruz-Santos', $user->name);
+        $this->assertSame('maria.santos@example.com', $user->email);
+        $this->assertSame('9171234567', $user->mobile);
+        $this->assertAuthenticatedAs($user);
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function acceptedMobileFormats(): array
+    {
+        return [
+            'local 10 digits' => ['9171234567', '9171234567'],
+            'leading zero' => ['09171234567', '9171234567'],
+            'country code' => ['639171234567', '9171234567'],
+            'plus country code with spaces' => ['+63 917 123 4567', '9171234567'],
+            'dashes and parentheses' => ['(0917) 123-4567', '9171234567'],
+        ];
+    }
+
+    /**
+     * @dataProvider acceptedMobileFormats
+     */
+    public function test_registration_accepts_common_mobile_formats(string $input, string $stored): void
+    {
+        $this->post(route('register.store'), [
+            'name' => 'Parish Member',
+            'email' => 'member@example.com',
+            'mobile' => $input,
+            'password' => 'ParishPassword123',
+            'password_confirmation' => 'ParishPassword123',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame($stored, User::firstOrFail()->mobile);
+    }
+
+    public function test_registration_treats_email_case_insensitively_for_duplicates_and_login(): void
+    {
+        User::factory()->create([
+            'email' => 'member@example.com',
+            'password' => Hash::make('ParishPassword123'),
+        ]);
+
+        $this->from(route('register'))
+            ->post(route('register.store'), [
+                'name' => 'Parish Member',
+                'email' => 'Member@Example.com',
+                'mobile' => '9181234567',
+                'password' => 'ParishPassword123',
+                'password_confirmation' => 'ParishPassword123',
+            ])
+            ->assertRedirect(route('register'))
+            ->assertSessionHasErrors(['email' => 'An account with this email address already exists. Try signing in instead.']);
+
+        $this->post(route('login.store'), [
+            'role' => User::ROLE_PARISHIONER,
+            'email' => ' MEMBER@example.com',
+            'password' => 'ParishPassword123',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticated();
+    }
+
+    /**
+     * @return array<string, array{0: array<string, string>, 1: string}>
+     */
+    public static function invalidRegistrations(): array
+    {
+        $valid = [
+            'name' => 'Parish Member',
+            'email' => 'member@example.com',
+            'mobile' => '9171234567',
+            'password' => 'ParishPassword123',
+            'password_confirmation' => 'ParishPassword123',
+        ];
+
+        return [
+            'missing name' => [[...$valid, 'name' => '   '], 'name'],
+            'name too short' => [[...$valid, 'name' => 'A'], 'name'],
+            'name too long' => [[...$valid, 'name' => str_repeat('a', 101)], 'name'],
+            'name with digits' => [[...$valid, 'name' => 'Member 123'], 'name'],
+            'name with symbols' => [[...$valid, 'name' => '<script>'], 'name'],
+            'missing email' => [[...$valid, 'email' => ''], 'email'],
+            'invalid email' => [[...$valid, 'email' => 'not-an-email'], 'email'],
+            'missing mobile' => [[...$valid, 'mobile' => ''], 'mobile'],
+            'mobile not starting with 9' => [[...$valid, 'mobile' => '8171234567'], 'mobile'],
+            'mobile too short' => [[...$valid, 'mobile' => '917123456'], 'mobile'],
+            'mobile too long' => [[...$valid, 'mobile' => '91712345678'], 'mobile'],
+            'mobile with letters' => [[...$valid, 'mobile' => '917abc4567'], 'mobile'],
+            'missing password' => [[...$valid, 'password' => '', 'password_confirmation' => ''], 'password'],
+            'password too short' => [[...$valid, 'password' => 'Abc123', 'password_confirmation' => 'Abc123'], 'password'],
+            'password without uppercase' => [[...$valid, 'password' => 'parishpassword123', 'password_confirmation' => 'parishpassword123'], 'password'],
+            'password without lowercase' => [[...$valid, 'password' => 'PARISHPASSWORD123', 'password_confirmation' => 'PARISHPASSWORD123'], 'password'],
+            'password without number' => [[...$valid, 'password' => 'ParishPassword', 'password_confirmation' => 'ParishPassword'], 'password'],
+            'password too long' => [[...$valid, 'password' => 'Aa1'.str_repeat('x', 70), 'password_confirmation' => 'Aa1'.str_repeat('x', 70)], 'password'],
+            'password confirmation mismatch' => [[...$valid, 'password_confirmation' => 'ParishPassword124'], 'password'],
+        ];
+    }
+
+    /**
+     * @dataProvider invalidRegistrations
+     *
+     * @param  array<string, string>  $payload
+     */
+    public function test_registration_rejects_invalid_input(array $payload, string $field): void
+    {
+        $this->from(route('register'))
+            ->post(route('register.store'), $payload)
+            ->assertRedirect(route('register'))
+            ->assertSessionHasErrors($field);
+
+        $this->assertGuest();
+        $this->assertDatabaseCount('users', 0);
+    }
+
+    public function test_registration_rejects_duplicate_mobile_in_any_format(): void
+    {
+        User::factory()->create(['mobile' => '9171234567']);
+
+        $this->from(route('register'))
+            ->post(route('register.store'), [
+                'name' => 'Parish Member',
+                'email' => 'new-member@example.com',
+                'mobile' => '0917 123 4567',
+                'password' => 'ParishPassword123',
+                'password_confirmation' => 'ParishPassword123',
+            ])
+            ->assertRedirect(route('register'))
+            ->assertSessionHasErrors(['mobile' => 'This mobile number is already registered to another account.']);
+    }
+
+    public function test_registration_cannot_assign_itself_the_administrator_role(): void
+    {
+        $this->post(route('register.store'), [
+            'name' => 'Parish Member',
+            'email' => 'member@example.com',
+            'mobile' => '9171234567',
+            'password' => 'ParishPassword123',
+            'password_confirmation' => 'ParishPassword123',
+            'role' => User::ROLE_ADMINISTRATOR,
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertSame(User::ROLE_PARISHIONER, User::firstOrFail()->role);
+    }
+
+    public function test_registration_form_keeps_input_and_shows_errors_after_failed_submit(): void
+    {
+        $this->followingRedirects()
+            ->from(route('register'))
+            ->post(route('register.store'), [
+                'name' => 'Parish Member',
+                'email' => 'member@example.com',
+                'mobile' => '123',
+                'password' => 'ParishPassword123',
+                'password_confirmation' => 'ParishPassword123',
+            ])
+            ->assertOk()
+            ->assertSee('Please fix the highlighted field below and try again.')
+            ->assertSee('Please enter a valid Philippine mobile number, like 9171234567 or 09171234567.')
+            ->assertSee('value="Parish Member"', false)
+            ->assertSee('value="member@example.com"', false)
+            ->assertDontSee('value="ParishPassword123"', false);
+    }
+
+    public function test_registration_page_includes_password_helpers(): void
+    {
+        $this->get(route('register'))
+            ->assertOk()
+            ->assertSee('data-password-toggle="password"', false)
+            ->assertSee('data-password-toggle="password_confirmation"', false)
+            ->assertSee('data-password-rules', false)
+            ->assertSee('At least 8 characters');
+    }
+
+    public function test_signed_in_users_cannot_open_registration(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(route('register'))
+            ->assertRedirect();
+    }
+
+    public function test_registration_is_rate_limited(): void
+    {
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $this->post(route('register.store'), ['name' => ''])->assertRedirect();
+        }
+
+        $this->post(route('register.store'), ['name' => ''])->assertStatus(429);
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -9,7 +10,6 @@ use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -29,6 +29,11 @@ class AuthController extends Controller
 
     public function login(Request $request): RedirectResponse
     {
+        if (is_string($request->input('email'))) {
+            // Emails are stored lowercase at registration.
+            $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
+        }
+
         $credentials = $request->validate([
             'role' => ['required', 'string', 'in:'.User::ROLE_PARISHIONER.','.User::ROLE_ADMINISTRATOR],
             'email' => ['required', 'string', 'email'],
@@ -63,17 +68,15 @@ class AuthController extends Controller
         );
     }
 
-    public function register(Request $request): RedirectResponse
+    public function register(RegisterRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-            'mobile' => ['required', 'string', 'regex:/^9[0-9]{9}$/', 'unique:users,mobile'],
-            'password' => ['required', 'confirmed', Password::min(8)],
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
-            ...$validated,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'mobile' => $validated['mobile'],
+            'password' => $validated['password'],
             'role' => User::ROLE_PARISHIONER,
         ]);
 
