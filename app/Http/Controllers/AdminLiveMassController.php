@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FacebookLive;
+use App\Support\FacebookLinkResolver;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,6 +46,9 @@ class AdminLiveMassController extends Controller
             'url' => __('Facebook Live link'),
         ]);
 
+        // Turn short share links into full video links so the video can play on the page.
+        $validated['url'] = app(FacebookLinkResolver::class)->resolve($validated['url']);
+
         DB::transaction(function () use ($validated, $request) {
             // Keep only the current link.
             FacebookLive::query()->delete();
@@ -59,7 +63,9 @@ class AdminLiveMassController extends Controller
 
         return redirect()
             ->route('admin.live-mass')
-            ->with('status', __('Facebook Live link saved. Parishioners can now see it on their Live Mass page.'));
+            ->with('status', FacebookLive::isEmbeddableVideoUrl($validated['url'])
+                ? __('Facebook Live link saved. Parishioners can now watch the video on their Live Mass page.')
+                : __('Facebook Live link saved. This link can only open Facebook, so parishioners will see a "Watch on Facebook" button instead of the video. Paste the link of the live video itself to show it on the page.'));
     }
 
     public function destroy(): RedirectResponse

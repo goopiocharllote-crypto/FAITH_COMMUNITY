@@ -48,6 +48,56 @@ class FacebookLive extends Model
         return false;
     }
 
+    /**
+     * Facebook only embeds links that point at one specific video, e.g.
+     * facebook.com/{page}/videos/{id}, facebook.com/watch/?v={id} or
+     * facebook.com/reel/{id}. Page links like facebook.com/{page}/live cannot.
+     */
+    public static function isEmbeddableVideoUrl(string $url): bool
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+        $isFacebookCom = in_array($host, ['facebook.com', 'fb.com'], true)
+            || str_ends_with($host, '.facebook.com')
+            || str_ends_with($host, '.fb.com');
+
+        if (! $isFacebookCom || ! str_starts_with(strtolower((string) parse_url($url, PHP_URL_SCHEME)), 'https')) {
+            return false;
+        }
+
+        if (preg_match('#/videos/(?:[^/]+/)?\d+#', $path) || preg_match('#^/reel/\d+#', $path)) {
+            return true;
+        }
+
+        return str_starts_with($path, '/watch') && isset($query['v']) && preg_match('/^\d+$/', (string) $query['v']);
+    }
+
+    /** Short or share links (fb.watch, /share/v/...) that may redirect to an embeddable video. */
+    public static function isShortShareUrl(string $url): bool
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        $path = (string) parse_url($url, PHP_URL_PATH);
+
+        return in_array($host, ['fb.watch', 'www.fb.watch', 'fb.me'], true) || str_starts_with($path, '/share/');
+    }
+
+    /** Facebook's embedded video player URL, or null when the link can't be embedded. */
+    public function embedUrl(): ?string
+    {
+        if (! self::isEmbeddableVideoUrl($this->url)) {
+            return null;
+        }
+
+        return 'https://www.facebook.com/plugins/video.php?'.http_build_query([
+            'href' => $this->url,
+            'show_text' => 'false',
+            'autoplay' => 'true',
+            'allowfullscreen' => 'true',
+        ], '', '&', PHP_QUERY_RFC3986);
+    }
+
     public function displayTitle(): string
     {
         return $this->title ?: self::DEFAULT_TITLE;

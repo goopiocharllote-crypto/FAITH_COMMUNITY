@@ -37,8 +37,12 @@
                     @endif
                     <h3 id="facebook-live-heading" class="text-xl font-bold text-gray-900">{{ $facebookLive->displayTitle() }}</h3>
                     <p class="mt-1 text-sm text-gray-600">
-                        {{ $facebookLive->is_live ? 'The parish is streaming Mass on Facebook right now.' : 'Watch the parish Mass video on Facebook.' }}
-                        Opens in the Facebook app if it's installed.
+                        @if ($facebookLive->embedUrl())
+                            {{ $facebookLive->is_live ? 'The parish is streaming Mass right now. Watch it below, or open it in the Facebook app.' : 'Watch the parish Mass video below, or open it in the Facebook app.' }}
+                        @else
+                            {{ $facebookLive->is_live ? 'The parish is streaming Mass on Facebook right now.' : 'Watch the parish Mass video on Facebook.' }}
+                            Opens in the Facebook app if it's installed.
+                        @endif
                     </p>
                 </div>
             </div>
@@ -55,8 +59,39 @@
         </section>
     @endif
 
+    @php($facebookEmbedUrl = $facebookLive?->embedUrl())
+
     <section class="overflow-hidden rounded-2xl border border-gray-200 bg-black" aria-label="Live Mass stream">
-        @if ($liveSchedule)
+        @if ($facebookEmbedUrl)
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-900 px-5 py-3 text-white">
+                <div class="flex items-center gap-3">
+                    @if ($facebookLive->is_live)
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide">
+                            <span class="h-2 w-2 animate-pulse rounded-full bg-white" aria-hidden="true"></span> Live
+                        </span>
+                    @else
+                        <span class="rounded-full bg-gray-700 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide">Replay</span>
+                    @endif
+                    <p class="font-semibold">{{ $facebookLive->displayTitle() }}</p>
+                </div>
+                <a href="{{ $facebookLive->url }}" target="_blank" rel="noopener noreferrer" class="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 hover:bg-gray-100">
+                    Open in Facebook
+                </a>
+            </div>
+            <div class="aspect-video w-full bg-black" data-facebook-player>
+                <iframe
+                    src="{{ $facebookEmbedUrl }}"
+                    title="{{ $facebookLive->displayTitle() }} on Facebook"
+                    class="h-full w-full border-0"
+                    scrolling="no"
+                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share; fullscreen"
+                    allowfullscreen
+                ></iframe>
+            </div>
+            <p class="bg-gray-900 px-5 py-2.5 text-xs text-gray-400">
+                Video not playing? It may be private on Facebook or blocked by your browser. Use "Open in Facebook" instead.
+            </p>
+        @elseif ($liveSchedule)
             @php($embedUrl = $liveSchedule->livestreamEmbedUrl())
             <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-900 px-5 py-3 text-white">
                 <div class="flex items-center gap-3">

@@ -29,6 +29,14 @@
                     </div>
                     <p class="font-semibold text-gray-900">{{ $facebookLive->displayTitle() }}</p>
                     <a href="{{ $facebookLive->url }}" target="_blank" rel="noopener noreferrer" class="mt-1 block break-all text-sm font-medium text-blue-700 hover:underline">{{ $facebookLive->url }}</a>
+                    @if ($facebookLive->embedUrl())
+                        <p class="mt-2 text-sm font-medium text-emerald-700">✓ The video plays right on the parishioners' Live Mass page.</p>
+                        <div class="mt-4 aspect-video w-full max-w-md overflow-hidden rounded-lg bg-black">
+                            <iframe src="{{ $facebookLive->embedUrl() }}" title="Preview of {{ $facebookLive->displayTitle() }}" class="h-full w-full border-0" scrolling="no" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+                        </div>
+                    @else
+                        <p class="mt-2 text-sm font-medium text-amber-700">This is a page link, so parishioners only get a "Watch on Facebook" button. To show the video on the page, paste the link of the live video itself.</p>
+                    @endif
                 </div>
 
                 <form method="POST" action="{{ route('admin.live-mass.destroy') }}" class="shrink-0">
@@ -49,7 +57,8 @@
     <section class="rounded-xl border border-gray-200 bg-white p-6" aria-labelledby="live-form-heading">
         <h3 id="live-form-heading" class="mb-1 text-xl font-bold">{{ $facebookLive ? 'Update the Facebook Live link' : 'Post a Facebook Live link' }}</h3>
         <p class="mb-5 text-sm text-gray-600">
-            Start your live video on Facebook, then copy its link (tap <strong>Share → Copy link</strong>) and paste it here.
+            Start your live video on Facebook, open the video, then copy its link (tap <strong>Share → Copy link</strong>) and paste it here.
+            A link to the video itself plays right on the parishioners' page; a link to your Facebook page only opens Facebook.
             Posting a new link replaces the old one.
         </p>
 
