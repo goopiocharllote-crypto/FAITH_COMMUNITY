@@ -38,8 +38,14 @@
         <a href="{{ route('users.announcements') }}" @class(['whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/10', 'bg-white/15' => request()->routeIs('users.announcements')])>
             Announcements
         </a>
-        <a href="{{ route('users.live-mass') }}" @class(['whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/10', 'bg-white/15' => request()->routeIs('users.live-mass')])>
+        @php($navFacebookLive = \App\Models\FacebookLive::current())
+        <a href="{{ route('users.live-mass') }}" @class(['inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/10', 'bg-white/15' => request()->routeIs('users.live-mass')])>
             Live Mass
+            @if ($navFacebookLive?->is_live)
+                <span class="inline-flex items-center gap-1 rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide text-white" data-live-indicator>
+                    <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-white" aria-hidden="true"></span> Live
+                </span>
+            @endif
         </a>
         <a href="{{ route('users.my-request') }}" @class(['whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/10', 'bg-white/15' => request()->routeIs('users.my-request')])>
             My Requests

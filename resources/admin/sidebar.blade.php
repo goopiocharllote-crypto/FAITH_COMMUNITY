@@ -12,6 +12,7 @@
             ['Announcements', 'admin.announcements'],
             ['Mass Intentions', 'admin.mass-intentions'],
             ['Schedules', 'admin.schedules'],
+            ['Live Mass', 'admin.live-mass'],
             ['Prayer Requests', 'admin.prayer-requests'],
             ['Donations', 'admin.donations'],
             ['Reports', 'admin.reports'],

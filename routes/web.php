@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminLiveMassController;
 use App\Http\Controllers\AdminPageController;
 use App\Http\Controllers\MassIntentionController;
 use App\Http\Controllers\PaymentController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\RequestCenterController;
 use App\Http\Controllers\UserDashboardController;
 use App\Models\Announcement;
 use App\Models\Donation;
+use App\Models\FacebookLive;
 use App\Models\MassIntention;
 use App\Models\MassSchedule;
 use App\Models\PrayerRequest;
@@ -82,6 +84,10 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::delete('/admin/schedules/{schedule}', [AdminPageController::class, 'destroySchedule'])
         ->name('admin.schedules.destroy');
 
+    Route::get('/admin/live-mass', [AdminLiveMassController::class, 'edit'])->name('admin.live-mass');
+    Route::put('/admin/live-mass', [AdminLiveMassController::class, 'update'])->name('admin.live-mass.update');
+    Route::delete('/admin/live-mass', [AdminLiveMassController::class, 'destroy'])->name('admin.live-mass.destroy');
+
     Route::get('/admin/prayer-requests', [AdminPageController::class, 'prayerRequests'])->name('admin.prayer-requests');
     Route::patch('/admin/prayer-requests/{prayerRequest}/approve', fn (PrayerRequest $prayerRequest, RequestCenterController $controller) => $controller->reviewPrayerRequest($prayerRequest, 'Approved'))
         ->name('admin.prayer-requests.approve');
@@ -130,6 +136,7 @@ Route::middleware(['auth', 'role:parishioner'])->group(function () {
     Route::get('/user/live-mass', fn () => view()->file(
         resource_path('users/live-mass.blade.php'),
         [
+            'facebookLive' => FacebookLive::current(),
             // Live window: 15 minutes before the Mass until 2 hours after it starts.
             'liveSchedule' => MassSchedule::query()
                 ->where('is_active', true)
