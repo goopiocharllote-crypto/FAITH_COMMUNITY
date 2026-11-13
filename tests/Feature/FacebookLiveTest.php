@@ -193,14 +193,14 @@ class FacebookLiveTest extends TestCase
         $this->actingAs($this->parishioner())
             ->get(route('users.live-mass'))
             ->assertOk()
-            ->assertSee('Live now on Facebook')
+            ->assertDontSee('Live now on Facebook')
             ->assertSee('Sunday 9 AM Mass')
             ->assertSee('Watch on Facebook')
             ->assertSee('href="https://www.facebook.com/lobocparish/live"', false)
             ->assertSee('target="_blank"', false)
             ->assertSee('rel="noopener noreferrer"', false)
             ->assertSee("We're live on Facebook", false)
-            ->assertSee('data-live-indicator', false);
+            ->assertDontSee('data-live-indicator', false);
     }
 
     public function test_link_marked_not_live_shows_as_replay_without_live_badges(): void
@@ -230,14 +230,15 @@ class FacebookLiveTest extends TestCase
             ->assertSee('No Live Mass Right Now');
     }
 
-    public function test_live_badge_appears_in_navbar_on_other_parishioner_pages(): void
+    public function test_no_live_badge_is_shown_in_the_parishioner_navbar(): void
     {
         FacebookLive::query()->create(['url' => 'https://www.facebook.com/lobocparish/live', 'is_live' => true]);
 
         $this->actingAs($this->parishioner())
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('data-live-indicator', false);
+            ->assertSee('Live Mass')
+            ->assertDontSee('data-live-indicator', false);
     }
 
     /**
@@ -307,7 +308,7 @@ class FacebookLiveTest extends TestCase
             ->assertDontSee('No Live Mass Right Now');
     }
 
-    public function test_replay_video_is_still_embedded_with_a_replay_label(): void
+    public function test_embedded_video_is_shown_without_live_or_replay_labels(): void
     {
         FacebookLive::query()->create(['url' => 'https://www.facebook.com/watch/?v=1234567890', 'is_live' => false]);
 
@@ -315,7 +316,7 @@ class FacebookLiveTest extends TestCase
             ->get(route('users.live-mass'))
             ->assertOk()
             ->assertSee('data-facebook-player', false)
-            ->assertSee('Replay');
+            ->assertDontSee('Replay');
     }
 
     public function test_page_links_fall_back_to_the_watch_on_facebook_button(): void

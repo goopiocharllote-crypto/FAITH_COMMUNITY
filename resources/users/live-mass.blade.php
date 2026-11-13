@@ -17,8 +17,7 @@
         <section
             @class([
                 'mb-8 flex flex-col gap-5 rounded-2xl border p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between',
-                'border-red-200 bg-gradient-to-br from-red-50 to-white' => $facebookLive->is_live,
-                'border-gray-200 bg-white' => ! $facebookLive->is_live,
+                'border-gray-200 bg-white',
             ])
             aria-labelledby="facebook-live-heading"
             data-facebook-live
@@ -28,13 +27,7 @@
                     <svg viewBox="0 0 24 24" class="h-7 w-7" fill="currentColor"><path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.7 4.53-4.7 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.96.93-1.96 1.88v2.27h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"/></svg>
                 </span>
                 <div class="min-w-0">
-                    @if ($facebookLive->is_live)
-                        <span class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
-                            <span class="h-2 w-2 animate-pulse rounded-full bg-white" aria-hidden="true"></span> Live now on Facebook
-                        </span>
-                    @else
-                        <span class="mb-2 inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-gray-600">On Facebook</span>
-                    @endif
+
                     <h3 id="facebook-live-heading" class="text-xl font-bold text-gray-900">{{ $facebookLive->displayTitle() }}</h3>
                     <p class="mt-1 text-sm text-gray-600">
                         @if ($facebookLive->embedUrl())
@@ -65,13 +58,7 @@
         @if ($facebookEmbedUrl)
             <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-900 px-5 py-3 text-white">
                 <div class="flex items-center gap-3">
-                    @if ($facebookLive->is_live)
-                        <span class="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide">
-                            <span class="h-2 w-2 animate-pulse rounded-full bg-white" aria-hidden="true"></span> Live
-                        </span>
-                    @else
-                        <span class="rounded-full bg-gray-700 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide">Replay</span>
-                    @endif
+
                     <p class="font-semibold">{{ $facebookLive->displayTitle() }}</p>
                 </div>
                 <a href="{{ $facebookLive->url }}" target="_blank" rel="noopener noreferrer" class="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 hover:bg-gray-100">
@@ -95,13 +82,9 @@
             @php($embedUrl = $liveSchedule->livestreamEmbedUrl())
             <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-900 px-5 py-3 text-white">
                 <div class="flex items-center gap-3">
-                    @if ($liveSchedule->mass_date->isPast())
-                        <span class="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide">
-                            <span class="h-2 w-2 animate-pulse rounded-full bg-white" aria-hidden="true"></span> Live
-                        </span>
-                    @else
+                    @unless ($liveSchedule->mass_date->isPast())
                         <span class="rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-gray-900">Starting soon</span>
-                    @endif
+                    @endunless
                     <div>
                         <p class="font-semibold">{{ $liveSchedule->title }}</p>
                         <p class="text-xs text-gray-300">{{ $liveSchedule->mass_date->format('l, F j · g:i A') }}</p>
