@@ -11,7 +11,7 @@
         {!! view()->file(resource_path('users/navbar.blade.php'))->render() !!}
 
         <main class="min-w-0 flex-1">
-            <header class="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 sm:px-8">
+            <header class="print:hidden flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 sm:px-8">
                 <h1 class="text-lg font-bold text-slate-800">@yield('page-title', 'Home')</h1>
                 <span class="hidden text-sm text-slate-600 sm:inline">Welcome, {{ auth()->user()->name }}</span>
             </header>

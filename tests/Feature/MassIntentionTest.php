@@ -34,7 +34,7 @@ class MassIntentionTest extends TestCase
             'offering_amount' => '100.00',
         ]);
 
-        $response->assertRedirect(route('mass-intentions.index'))
+        $response->assertRedirect(route('mass-intentions.confirmation', MassIntention::query()->sole()))
             ->assertSessionHas('status', 'Your Mass Intention request has been submitted.');
 
         $this->assertDatabaseHas('mass_intentions', [
@@ -152,7 +152,7 @@ class MassIntentionTest extends TestCase
                 'mobile' => '9171234567',
                 'offering_amount' => '100.00',
             ])
-            ->assertRedirect(route('mass-intentions.index'))
+            ->assertRedirect(route('mass-intentions.confirmation', MassIntention::query()->sole()))
             ->assertSessionHas('status', 'Your Mass Intention request has been submitted.');
 
         $this->assertDatabaseHas('mass_intentions', [
@@ -211,7 +211,7 @@ class MassIntentionTest extends TestCase
                 'mobile' => '9171234567',
                 'offering_amount' => '150.00',
             ])
-            ->assertRedirect(route('mass-intentions.index'))
+            ->assertRedirect(route('mass-intentions.confirmation', MassIntention::query()->sole()))
             ->assertSessionHas('status', 'Your Mass Intention request has been submitted.');
 
         $massIntention = MassIntention::query()->sole();
@@ -244,7 +244,7 @@ class MassIntentionTest extends TestCase
                 'mobile' => '9171234567',
                 'offering_amount' => '100.00',
             ])
-            ->assertRedirect(route('mass-intentions.index'));
+            ->assertRedirect(route('mass-intentions.confirmation', MassIntention::query()->sole()));
 
         $massIntention = MassIntention::query()->sole();
 
@@ -350,6 +350,56 @@ class MassIntentionTest extends TestCase
 
         $this->post(route('mass-intentions.store'), [])
             ->assertRedirect(route('login'));
+    }
+
+    public function test_booking_confirmation_shows_reference_number_and_details(): void
+    {
+        $user = User::factory()->create();
+        $schedule = $this->createOpenSchedule();
+
+        $this->actingAs($user)->post(route('mass-intentions.store'), [
+            'intention_type' => 'Thanksgiving',
+            'intention_for' => 'The Santos family',
+            'schedule_id' => $schedule->id,
+            'mobile' => '9171234567',
+            'offering_amount' => '100.00',
+        ]);
+
+        $massIntention = MassIntention::query()->sole();
+        $reference = 'MI-'.$massIntention->created_at->format('Y').'-'.str_pad((string) $massIntention->id, 6, '0', STR_PAD_LEFT);
+
+        $this->get(route('mass-intentions.confirmation', $massIntention))
+            ->assertOk()
+            ->assertSee('Booking Confirmation')
+            ->assertSee('Booking received')
+            ->assertSee($reference)
+            ->assertSee('The Santos family')
+            ->assertSee('Thanksgiving')
+            ->assertSee($schedule->mass_date->format('l, F j, Y'))
+            ->assertSee('100.00')
+            ->assertSee('Pay at parish office');
+
+        $this->get(route('mass-intentions.index'))
+            ->assertSee(route('mass-intentions.confirmation', $massIntention))
+            ->assertSee($reference);
+
+        $massIntention->forceFill(['status' => 'Approved'])->save();
+
+        $this->get(route('mass-intentions.confirmation', $massIntention))
+            ->assertOk()
+            ->assertSee('Booking confirmed');
+    }
+
+    public function test_booking_confirmation_is_private_to_its_owner(): void
+    {
+        $massIntention = MassIntention::factory()->create();
+
+        $this->get(route('mass-intentions.confirmation', $massIntention))
+            ->assertRedirect(route('login'));
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('mass-intentions.confirmation', $massIntention))
+            ->assertForbidden();
     }
 
     private function createOpenSchedule(?\Illuminate\Support\Carbon $massDate = null): MassSchedule

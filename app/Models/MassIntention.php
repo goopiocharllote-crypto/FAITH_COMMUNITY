@@ -93,6 +93,6 @@ class MassIntention extends Model implements Payable
 
     public function paymentReturnRoute(): string
     {
-        return route('mass-intentions.index');
+        return route('mass-intentions.confirmation', $this);
     }
 }

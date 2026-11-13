@@ -101,7 +101,17 @@ class MassIntentionController extends Controller
         }
 
         return redirect()
-            ->route('mass-intentions.index')
+            ->route('mass-intentions.confirmation', $intention)
             ->with('status', __('Your Mass Intention request has been submitted.'));
+    }
+
+    /** Booking confirmation slip for one of the parishioner's own Mass intentions. */
+    public function confirmation(Request $request, MassIntention $massIntention): View
+    {
+        abort_unless($massIntention->user_id === $request->user()->id, 403);
+
+        return view()->file(resource_path('users/mass-intention-confirmation.blade.php'), [
+            'massIntention' => $massIntention->load('schedule'),
+        ]);
     }
 }

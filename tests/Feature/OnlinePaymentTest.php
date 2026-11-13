@@ -162,7 +162,7 @@ class OnlinePaymentTest extends TestCase
         $this->actingAs($user)->post(route('payments.simulator.complete', $payment), ['decision' => 'pay']);
         $this->actingAs($user)
             ->get(route('payments.return', ['payment' => $payment, 'result' => 'success']))
-            ->assertRedirect(route('mass-intentions.index'));
+            ->assertRedirect(route('mass-intentions.confirmation', $intention));
 
         $this->assertSame('Paid', $intention->fresh()->payment_status);
         // Paying does not approve the intention; the parish office still reviews it.

@@ -974,7 +974,7 @@
                     <tr class="border-t border-gray-100">
 
                         <td class="whitespace-nowrap px-5 py-4 text-sm text-gray-600">
-                            MI-{{ $massIntention->created_at->format('Y') }}-{{ str_pad((string) $massIntention->id, 6, '0', STR_PAD_LEFT) }}
+                            <a href="{{ route('mass-intentions.confirmation', $massIntention) }}" class="font-semibold text-blue-700 underline hover:text-blue-900" title="View booking confirmation">{{ $massIntention->referenceNumber() }}</a>
                         </td>
 
                         <td class="px-5 py-4 font-semibold">

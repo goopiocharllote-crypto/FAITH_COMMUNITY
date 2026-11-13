@@ -113,6 +113,8 @@ Route::middleware(['auth', 'role:parishioner'])->group(function () {
     Route::redirect('/users/welcome', '/dashboard')->name('users.welcome');
     Route::get('/mass-intentions', [MassIntentionController::class, 'index'])->name('mass-intentions.index');
     Route::post('/mass-intentions', [MassIntentionController::class, 'store'])->name('mass-intentions.store');
+    Route::get('/mass-intentions/{massIntention}/confirmation', [MassIntentionController::class, 'confirmation'])
+        ->name('mass-intentions.confirmation');
     Route::get('/my-requests', [RequestCenterController::class, 'index'])->name('users.my-request');
     Route::post('/my-requests/prayer-requests', [RequestCenterController::class, 'storePrayerRequest'])
         ->name('users.prayer-requests.store');

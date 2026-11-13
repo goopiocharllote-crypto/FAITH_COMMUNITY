@@ -1,4 +1,4 @@
-<aside class="bg-slate-800 text-white md:flex md:min-h-screen md:w-64 md:flex-col">
+<aside class="print:hidden bg-slate-800 text-white md:flex md:min-h-screen md:w-64 md:flex-col">
     <div class="flex items-center justify-between gap-3 px-5 py-4">
         <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3">
             <img src="{{ asset('images/logo.png') }}" alt="" class="h-11 w-11 shrink-0 rounded-lg bg-white object-contain p-1">
