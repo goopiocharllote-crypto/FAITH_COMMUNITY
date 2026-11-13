@@ -136,6 +136,31 @@ class ParishNotificationTest extends TestCase
         $this->assertSame(route('mass-intentions.index'), $mail->actionUrl);
     }
 
+    public function test_booking_confirmation_sms_goes_to_the_number_entered_on_the_booking_form(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create(['mobile' => '9171234567']);
+        $schedule = MassSchedule::query()->create([
+            'title' => 'Sunday Mass',
+            'mass_date' => now()->addDays(3),
+            'closing_at' => now()->addDays(2),
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)->post(route('mass-intentions.store'), [
+            'intention_type' => 'Thanksgiving',
+            'intention_for' => 'My family',
+            'schedule_id' => $schedule->id,
+            'mobile' => '9998887777',
+            'offering_amount' => '100.00',
+        ]);
+
+        Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n) => $n->kind === 'mass_intention.submitted'
+            && $n->smsTo === '09998887777'
+            && str_contains($n->sms, 'Booking confirmation'));
+    }
+
     public function test_sms_log_driver_writes_the_message_to_the_log(): void
     {
         config(['services.sms.driver' => 'log']);
@@ -165,6 +190,48 @@ class ParishNotificationTest extends TestCase
             && $request['number'] === '09171234567'
             && $request['sendername'] === 'LOBOCPARISH'
             && $request['message'] === 'Approved for Sunday. - Loboc Parish');
+    }
+
+    public function test_sms_iprog_driver_posts_to_iprog_with_an_international_number(): void
+    {
+        config([
+            'services.sms.driver' => 'iprog',
+            'services.iprog.api_token' => 'ip_token',
+            'services.iprog.url' => 'https://www.iprogsms.com/api/v1/sms_messages',
+        ]);
+        Http::fake(['www.iprogsms.com/*' => Http::response(['status' => 200, 'message_id' => 'iSms-1'])]);
+        Log::spy();
+        $user = User::factory()->create(['mobile' => '9171234567']);
+
+        (new SmsChannel)->send($user, new ParishUpdate('test', 'Subject', ['Line'], 'Approved for Sunday.'));
+
+        Http::assertSent(fn (HttpRequest $request) => $request->url() === 'https://www.iprogsms.com/api/v1/sms_messages'
+            && $request['api_token'] === 'ip_token'
+            && $request['phone_number'] === '639171234567'
+            && $request['message'] === 'Approved for Sunday.');
+        Log::shouldNotHaveReceived('error');
+    }
+
+    public function test_iprog_error_response_is_logged_without_breaking_the_request(): void
+    {
+        config(['services.sms.driver' => 'iprog', 'services.iprog.api_token' => 'bad']);
+        Http::fake(['*' => Http::response(['status' => 500, 'message' => 'Invalid Token'])]);
+        Log::spy();
+        $user = User::factory()->create(['mobile' => '9171234567']);
+
+        (new SmsChannel)->send($user, new ParishUpdate('test', 'Subject', ['Line'], 'Hi'));
+
+        Log::shouldHaveReceived('error')->once();
+    }
+
+    public function test_booking_confirmation_sms_fits_the_free_100_character_limit(): void
+    {
+        $user = User::factory()->create();
+        $intention = MassIntention::factory()->create(['user_id' => $user->id]);
+
+        $text = ParishUpdate::massIntentionSubmitted($intention)->toSms($user);
+
+        $this->assertLessThanOrEqual(100, mb_strlen($text));
     }
 
     public function test_sms_failure_is_logged_without_breaking_the_request(): void

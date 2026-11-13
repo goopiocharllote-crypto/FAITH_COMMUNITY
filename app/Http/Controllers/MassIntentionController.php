@@ -94,7 +94,10 @@ class MassIntentionController extends Controller
         $validated['mass_date'] = $schedule->mass_date;
         /** @var MassIntention $intention */
         $intention = $request->user()->massIntentions()->create($validated);
-        $request->user()->notify(ParishUpdate::massIntentionSubmitted($intention));
+        // The booking confirmation is texted to the mobile number entered on the booking form.
+        $request->user()->notify(
+            ParishUpdate::massIntentionSubmitted($intention)->textingNumber('0'.$intention->mobile)
+        );
 
         if ($intention->isOnline() && (float) $intention->offering_amount > 0) {
             return app(PaymentController::class)->redirectToCheckout($intention);

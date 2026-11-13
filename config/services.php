@@ -30,7 +30,8 @@ return [
 
     /*
     | SMS notifications. "log" writes messages to storage/logs/laravel.log;
-    | "semaphore" sends real SMS through https://semaphore.co (Philippines).
+    | "semaphore" sends real SMS through https://semaphore.co and "iprog"
+    | through https://www.iprogsms.com (both Philippines).
     */
     'sms' => [
         'driver' => env('SMS_DRIVER', 'log'),
@@ -40,6 +41,11 @@ return [
         'api_key' => env('SEMAPHORE_API_KEY'),
         'sender_name' => env('SEMAPHORE_SENDER_NAME'),
         'url' => env('SEMAPHORE_URL', 'https://api.semaphore.co/api/v4/messages'),
+    ],
+
+    'iprog' => [
+        'api_token' => env('IPROG_API_TOKEN'),
+        'url' => env('IPROG_URL', 'https://www.iprogsms.com/api/v1/sms_messages'),
     ],
 
     'slack' => [

@@ -22,6 +22,9 @@ class ParishUpdate extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    /** Local-format number (09XXXXXXXXX) to text instead of the account's mobile, e.g. the one typed on a booking form. */
+    public ?string $smsTo = null;
+
     /**
      * @param  list<string>  $lines
      */
@@ -47,11 +50,18 @@ class ParishUpdate extends Notification implements ShouldQueue
             $channels[] = 'mail';
         }
 
-        if ($notifiable->routeNotificationFor('sms', $this)) {
+        if ($this->smsTo || $notifiable->routeNotificationFor('sms', $this)) {
             $channels[] = SmsChannel::class;
         }
 
         return $channels;
+    }
+
+    public function textingNumber(string $localNumber): self
+    {
+        $this->smsTo = $localNumber;
+
+        return $this;
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -97,7 +107,7 @@ class ParishUpdate extends Notification implements ShouldQueue
                 $paymentLine,
                 'We will notify you once the parish office reviews your request.',
             ],
-            'Mass Intention '.$ref.' received for '.$when.'. We will text you once it is reviewed.',
+            'Booking confirmation '.$ref.': '.$when.'. Pending approval.',
             'View my Mass Intentions',
             route('mass-intentions.index'),
         );
