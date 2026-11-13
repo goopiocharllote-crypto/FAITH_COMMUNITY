@@ -30,7 +30,11 @@
                     <p class="font-semibold text-gray-900">{{ $facebookLive->displayTitle() }}</p>
                     <a href="{{ $facebookLive->url }}" target="_blank" rel="noopener noreferrer" class="mt-1 block break-all text-sm font-medium text-blue-700 hover:underline">{{ $facebookLive->url }}</a>
                     @if ($facebookLive->embedUrl())
-                        <p class="mt-2 text-sm font-medium text-emerald-700">✓ The video plays right on the parishioners' Live Mass page.</p>
+                        @if (\App\Models\FacebookLive::isShareVideoUrl($facebookLive->url))
+                            <p class="mt-2 text-sm font-medium text-amber-700">This is a share link. The video is shown on the parishioners' Live Mass page if Facebook allows it. If the preview below stays blank, paste the video's own link instead (open the video in a browser and copy the address bar).</p>
+                        @else
+                            <p class="mt-2 text-sm font-medium text-emerald-700">✓ The video plays right on the parishioners' Live Mass page.</p>
+                        @endif
                         <div class="mt-4 aspect-video w-full max-w-md overflow-hidden rounded-lg bg-black">
                             <iframe src="{{ $facebookLive->embedUrl() }}" title="Preview of {{ $facebookLive->displayTitle() }}" class="h-full w-full border-0" scrolling="no" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
                         </div>

@@ -65,7 +65,9 @@ class AdminLiveMassController extends Controller
             ->route('admin.live-mass')
             ->with('status', FacebookLive::isEmbeddableVideoUrl($validated['url'])
                 ? __('Facebook Live link saved. Parishioners can now watch the video on their Live Mass page.')
-                : __('Facebook Live link saved. This link can only open Facebook, so parishioners will see a "Watch on Facebook" button instead of the video. Paste the link of the live video itself to show it on the page.'));
+                : (FacebookLive::isShareVideoUrl($validated['url'])
+                    ? __('Facebook Live link saved. The video will be shown on the Live Mass page. Check the preview below: if it stays blank, paste the video\'s own link (open the video in a browser and copy the address bar).')
+                    : __('Facebook Live link saved. This link can only open Facebook, so parishioners will see a "Watch on Facebook" button instead of the video. Paste the link of the live video itself to show it on the page.')));
     }
 
     public function destroy(): RedirectResponse

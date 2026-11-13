@@ -83,10 +83,27 @@ class FacebookLive extends Model
         return in_array($host, ['fb.watch', 'www.fb.watch', 'fb.me'], true) || str_starts_with($path, '/share/');
     }
 
+    /**
+     * A facebook.com/share/v/... or /share/r/... link copied from the Facebook app. Facebook
+     * documents video links, not share links, for its player, so these are tried on a
+     * best-effort basis (we still try to resolve them to the real video link when saving).
+     */
+    public static function isShareVideoUrl(string $url): bool
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        $path = (string) parse_url($url, PHP_URL_PATH);
+
+        $isFacebookCom = $host === 'facebook.com' || str_ends_with($host, '.facebook.com');
+
+        return $isFacebookCom
+            && str_starts_with(strtolower((string) parse_url($url, PHP_URL_SCHEME)), 'https')
+            && (str_starts_with($path, '/share/v/') || str_starts_with($path, '/share/r/'));
+    }
+
     /** Facebook's embedded video player URL, or null when the link can't be embedded. */
     public function embedUrl(): ?string
     {
-        if (! self::isEmbeddableVideoUrl($this->url)) {
+        if (! self::isEmbeddableVideoUrl($this->url) && ! self::isShareVideoUrl($this->url)) {
             return null;
         }
 

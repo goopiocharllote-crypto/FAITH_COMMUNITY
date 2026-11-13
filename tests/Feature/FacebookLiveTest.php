@@ -269,6 +269,28 @@ class FacebookLiveTest extends TestCase
         $this->assertSame($embeddable, FacebookLive::isEmbeddableVideoUrl($url));
     }
 
+    public function test_share_links_are_shown_in_the_player_on_a_best_effort_basis(): void
+    {
+        $url = 'https://www.facebook.com/share/v/19g6wiRZuu/?mibextid=wwXIfr';
+        FacebookLive::query()->create(['title' => 'Sunday Mass', 'url' => $url, 'is_live' => true]);
+
+        $this->assertFalse(FacebookLive::isEmbeddableVideoUrl($url));
+        $this->assertTrue(FacebookLive::isShareVideoUrl($url));
+        $this->assertFalse(FacebookLive::isShareVideoUrl('https://evil.example/share/v/123'));
+        $this->assertNotNull(FacebookLive::current()->embedUrl());
+
+        $this->actingAs($this->parishioner())
+            ->get(route('users.live-mass'))
+            ->assertOk()
+            ->assertSee('data-facebook-player', false)
+            ->assertSee('plugins/video.php', false)
+            ->assertSee('Open in Facebook');
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.live-mass'))
+            ->assertSee('This is a share link');
+    }
+
     public function test_parishioner_sees_the_live_video_player_instead_of_the_placeholder(): void
     {
         $url = 'https://www.facebook.com/lobocparish/videos/1234567890';
