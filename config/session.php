@@ -18,7 +18,10 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    // On Vercel (which sets VERCEL=1) every request may run on a different short-lived
+    // server, so file/database sessions break CSRF checks (419 Page Expired). Cookie
+    // sessions travel with the browser, so always use them there.
+    'driver' => env('VERCEL') ? 'cookie' : env('SESSION_DRIVER', 'database'),
 
     /*
     |--------------------------------------------------------------------------

@@ -13,7 +13,8 @@ return [
     |
     */
 
-    'default' => env('QUEUE_CONNECTION', 'database'),
+    // Vercel has no queue worker, so queued emails/SMS would never be sent. Run them inline there.
+    'default' => env('VERCEL') ? 'sync' : env('QUEUE_CONNECTION', 'database'),
 
     /*
     |--------------------------------------------------------------------------
