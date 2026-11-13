@@ -22,7 +22,8 @@ class AdminLiveMassController extends Controller
     public function update(Request $request): RedirectResponse
     {
         if (is_string($request->input('url'))) {
-            $request->merge(['url' => trim($request->input('url'))]);
+            // Accept a plain link, or Facebook's pasted "Embed" code.
+            $request->merge(['url' => FacebookLive::extractLink($request->input('url'))]);
         }
 
         $validated = $request->validate([

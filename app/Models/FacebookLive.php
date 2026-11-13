@@ -30,6 +30,34 @@ class FacebookLive extends Model
         ];
     }
 
+    /**
+     * Admins may paste Facebook's "Embed" code (an <iframe> whose src is
+     * facebook.com/plugins/video.php?href=VIDEO_LINK...) or that plugin URL instead of a
+     * plain link. Pull the video link out of it; anything else is returned trimmed.
+     */
+    public static function extractLink(string $input): string
+    {
+        $input = trim($input);
+
+        if (preg_match('/<iframe\b[^>]*\bsrc\s*=\s*(["\'])(.*?)\1/is', $input, $match)) {
+            $input = trim(html_entity_decode($match[2]));
+        }
+
+        $host = strtolower((string) parse_url($input, PHP_URL_HOST));
+
+        if (self::isFacebookUrl($input)
+            && str_contains($host, 'facebook.com')
+            && str_starts_with((string) parse_url($input, PHP_URL_PATH), '/plugins/')) {
+            parse_str((string) parse_url($input, PHP_URL_QUERY), $query);
+
+            if (isset($query['href']) && is_string($query['href']) && $query['href'] !== '') {
+                return trim($query['href']);
+            }
+        }
+
+        return $input;
+    }
+
     public static function current(): ?self
     {
         return static::query()->latest('id')->first();

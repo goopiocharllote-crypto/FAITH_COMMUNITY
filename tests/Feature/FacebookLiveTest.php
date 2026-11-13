@@ -270,6 +270,31 @@ class FacebookLiveTest extends TestCase
         $this->assertSame($embeddable, FacebookLive::isEmbeddableVideoUrl($url));
     }
 
+    public function test_facebook_embed_code_can_be_pasted_instead_of_a_link(): void
+    {
+        $iframe = '<iframe src="https://www.facebook.com/plugins/video.php?height=476&href=https%3A%2F%2Fwww.facebook.com%2F61582155464804%2Fvideos%2F39958342950447077%2F&show_text=false&width=267&t=0" width="267" height="476" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowFullScreen="true"></iframe>';
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.live-mass.update'), ['url' => $iframe, 'is_live' => '1'])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status', fn (string $status) => str_contains($status, 'watch the video'));
+
+        $this->assertSame(
+            'https://www.facebook.com/61582155464804/videos/39958342950447077/',
+            FacebookLive::current()->url,
+        );
+        $this->assertNotNull(FacebookLive::current()->embedUrl());
+    }
+
+    public function test_embed_code_for_another_site_is_rejected(): void
+    {
+        $this->actingAs($this->admin())
+            ->put(route('admin.live-mass.update'), ['url' => '<iframe src="https://evil.example/plugins/video.php?href=https%3A%2F%2Fevil.example%2Fx"></iframe>'])
+            ->assertSessionHasErrors('url');
+
+        $this->assertDatabaseCount('facebook_lives', 0);
+    }
+
     public function test_share_links_are_shown_in_the_player_on_a_best_effort_basis(): void
     {
         $url = 'https://www.facebook.com/share/v/19g6wiRZuu/?mibextid=wwXIfr';

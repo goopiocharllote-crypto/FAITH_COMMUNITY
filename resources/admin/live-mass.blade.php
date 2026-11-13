@@ -62,6 +62,7 @@
         <h3 id="live-form-heading" class="mb-1 text-xl font-bold">{{ $facebookLive ? 'Update the Facebook Live link' : 'Post a Facebook Live link' }}</h3>
         <p class="mb-5 text-sm text-gray-600">
             Start your live video on Facebook, open the video, then copy its link (tap <strong>Share → Copy link</strong>) and paste it here.
+            You can also paste Facebook's <strong>Embed</strong> code as it is (the text that starts with <code>&lt;iframe</code>).
             A link to the video itself plays right on the parishioners' page; a link to your Facebook page only opens Facebook.
             Posting a new link replaces the old one.
         </p>
@@ -74,11 +75,11 @@
                 <label for="url" class="mb-2 block font-semibold text-gray-800">Facebook Live link</label>
                 <input
                     id="url"
-                    type="url"
+                    type="text"
                     name="url"
                     value="{{ old('url', $facebookLive?->url) }}"
                     required
-                    maxlength="500"
+                    maxlength="3000"
                     inputmode="url"
                     autocapitalize="none"
                     spellcheck="false"
@@ -86,7 +87,7 @@
                     aria-describedby="url-hint"
                     class="{{ $inputClass('url') }}"
                 >
-                <p id="url-hint" class="mt-1.5 text-xs text-gray-500">Accepted: facebook.com, m.facebook.com, fb.watch and fb.com links.</p>
+                <p id="url-hint" class="mt-1.5 text-xs text-gray-500">Accepted: facebook.com, m.facebook.com, fb.watch and fb.com links, or Facebook's Embed code.</p>
                 @error('url')
                     <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                 @enderror
