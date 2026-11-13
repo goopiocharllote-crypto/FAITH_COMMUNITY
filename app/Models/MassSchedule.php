@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MassSchedule extends Model
 {
+    /** Intention requests close this many minutes before the Mass starts. */
+    public const CLOSING_MINUTES_BEFORE_MASS = 10;
+
     protected $fillable = [
         'title',
         'mass_date',

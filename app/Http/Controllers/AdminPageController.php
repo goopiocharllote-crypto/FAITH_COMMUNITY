@@ -107,13 +107,14 @@ class AdminPageController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'mass_date' => ['required', 'date_format:Y-m-d\TH:i', 'after:now'],
-            'closing_at' => ['required', 'date_format:Y-m-d\TH:i', 'after:now', 'before:mass_date'],
             'livestream_url' => ['nullable', 'url:https', 'max:500'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
-        $validated['mass_date'] = Carbon::createFromFormat('Y-m-d\TH:i', $validated['mass_date'])
-            ->format('Y-m-d H:i:s');
-        $validated['closing_at'] = Carbon::createFromFormat('Y-m-d\TH:i', $validated['closing_at'])
+        $massDate = Carbon::createFromFormat('Y-m-d\TH:i', $validated['mass_date']);
+        $validated['mass_date'] = $massDate->format('Y-m-d H:i:s');
+        // Requests always close a fixed number of minutes before the Mass starts.
+        $validated['closing_at'] = $massDate->copy()
+            ->subMinutes(MassSchedule::CLOSING_MINUTES_BEFORE_MASS)
             ->format('Y-m-d H:i:s');
         $validated['is_active'] = $request->boolean('is_active');
 
@@ -129,13 +130,14 @@ class AdminPageController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'mass_date' => ['required', 'date_format:Y-m-d\TH:i', 'after:now'],
-            'closing_at' => ['required', 'date_format:Y-m-d\TH:i', 'after:now', 'before:mass_date'],
             'livestream_url' => ['nullable', 'url:https', 'max:500'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
-        $validated['mass_date'] = Carbon::createFromFormat('Y-m-d\TH:i', $validated['mass_date'])
-            ->format('Y-m-d H:i:s');
-        $validated['closing_at'] = Carbon::createFromFormat('Y-m-d\TH:i', $validated['closing_at'])
+        $massDate = Carbon::createFromFormat('Y-m-d\TH:i', $validated['mass_date']);
+        $validated['mass_date'] = $massDate->format('Y-m-d H:i:s');
+        // Requests always close a fixed number of minutes before the Mass starts.
+        $validated['closing_at'] = $massDate->copy()
+            ->subMinutes(MassSchedule::CLOSING_MINUTES_BEFORE_MASS)
             ->format('Y-m-d H:i:s');
         $validated['is_active'] = $request->boolean('is_active');
         $schedule->update($validated);

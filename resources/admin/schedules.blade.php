@@ -153,62 +153,15 @@
 
             </div>
 
-            <!-- INTENTION CLOSING TIME -->
+            <!-- INTENTION CLOSING TIME (automatic) -->
 
             <div class="md:col-span-2">
-
-                <label
-                    for="closing_at"
-                    class="
-                        block
-                        font-semibold
-                        text-gray-800
-                        mb-2
-                    "
-                >
-                    Intention Request Closing Date and Time
-                </label>
-
-                <input
-                    type="hidden"
-                    name="closing_at"
-                    value="{{ old('closing_at') }}"
-                    class="closing-date-value"
-                >
-
-                <div class="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:grid-cols-4">
-                    <input
-                        type="date"
-                        id="closing_at_date"
-                        required
-                        min="{{ now()->format('Y-m-d') }}"
-                        aria-label="Intention request closing date"
-                        class="closing-date w-full rounded-xl border border-gray-300 px-4 py-3"
-                    >
-                    <select required aria-label="Closing hour" class="closing-hour w-full rounded-xl border border-gray-300 px-4 py-3">
-                        <option value="">Hour</option>
-                        @for ($hour = 1; $hour <= 12; $hour++)
-                            <option value="{{ sprintf('%02d', $hour) }}">{{ $hour }}</option>
-                        @endfor
-                    </select>
-                    <select required aria-label="Closing minute" class="closing-minute w-full rounded-xl border border-gray-300 px-4 py-3">
-                        <option value="">Minute</option>
-                        @for ($minute = 0; $minute < 60; $minute++)
-                            <option value="{{ sprintf('%02d', $minute) }}">{{ sprintf('%02d', $minute) }}</option>
-                        @endfor
-                    </select>
-                    <select required aria-label="Closing AM or PM" class="closing-period w-full rounded-xl border border-gray-300 px-4 py-3">
-                        <option value="">AM/PM</option>
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
-                    </select>
-                </div>
-                <p class="mt-2 text-sm text-gray-500">This deadline is shown to parishioners. Requests close at this time and remain unavailable until the Mass has started. The closing date and time must be before the Mass date and time.</p>
-
+                <p class="font-semibold text-gray-800">Intention Request Closing</p>
+                <p class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-gray-700">Requests close automatically <strong>{{ \App\Models\MassSchedule::CLOSING_MINUTES_BEFORE_MASS }} minutes before</strong> the Mass starts.</p>
             </div>
 
 
-            <!-- LIVESTREAM -->
+                        <!-- LIVESTREAM -->
 
             <div class="md:col-span-2">
                 <label for="livestream_url" class="block font-semibold text-gray-800 mb-2">
@@ -459,67 +412,20 @@
                                     <option value="PM" @selected($schedule->mass_date->format('A') === 'PM')>PM</option>
                                 </select>
                             </div>
-                            <p class="mt-2 text-sm text-gray-500">Use the 12-hour clock. The closing date and time must be before the Mass date and time.</p>
+                            <p class="mt-2 text-sm text-gray-500">Use the 12-hour clock. Requests close automatically 10 minutes before this time.</p>
 
                         </div>
 
 
-                        <!-- INTENTION CLOSING TIME -->
+                        <!-- INTENTION CLOSING TIME (automatic) -->
 
                         <div>
-
-                            <label
-                                for="closing_at_{{ $schedule->id }}"
-                                class="
-                                    block
-                                    font-semibold
-                                    text-gray-800
-                                    mb-2
-                                "
-                            >
-                                Intention Request Closing Date and Time
-                            </label>
-
-                            <input
-                                type="hidden"
-                                name="closing_at"
-                                value="{{ old('closing_at', $schedule->closing_at?->format('Y-m-d\TH:i')) }}"
-                                class="closing-date-value"
-                            >
-
-                            <div class="mt-2 grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:grid-cols-4">
-                                <input
-                                    type="date"
-                                    id="closing_at_date_{{ $schedule->id }}"
-                                    value="{{ $schedule->closing_at?->format('Y-m-d') }}"
-                                    required
-                                    min="{{ now()->format('Y-m-d') }}"
-                                    aria-label="Intention request closing date"
-                                    class="closing-date w-full rounded-xl border border-gray-300 px-4 py-3"
-                                >
-                                <select required aria-label="Closing hour" class="closing-hour w-full rounded-xl border border-gray-300 px-4 py-3">
-                                    <option value="">Hour</option>
-                                    @for ($hour = 1; $hour <= 12; $hour++)
-                                        <option value="{{ sprintf('%02d', $hour) }}" @selected($schedule->closing_at?->format('h') === sprintf('%02d', $hour))>{{ $hour }}</option>
-                                    @endfor
-                                </select>
-                                <select required aria-label="Closing minute" class="closing-minute w-full rounded-xl border border-gray-300 px-4 py-3">
-                                    <option value="">Minute</option>
-                                    @for ($minute = 0; $minute < 60; $minute++)
-                                        <option value="{{ sprintf('%02d', $minute) }}" @selected($schedule->closing_at?->format('i') === sprintf('%02d', $minute))>{{ sprintf('%02d', $minute) }}</option>
-                                    @endfor
-                                </select>
-                                <select required aria-label="Closing AM or PM" class="closing-period w-full rounded-xl border border-gray-300 px-4 py-3">
-                                    <option value="AM" @selected($schedule->closing_at?->format('A') === 'AM')>AM</option>
-                                    <option value="PM" @selected($schedule->closing_at?->format('A') === 'PM')>PM</option>
-                                </select>
-                            </div>
-                            <p class="mt-2 text-sm text-gray-500">12-hour clock</p>
-
+                            <p class="font-semibold text-gray-800">Intention Request Closing</p>
+                            <p class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-gray-700">Requests close automatically <strong>{{ \App\Models\MassSchedule::CLOSING_MINUTES_BEFORE_MASS }} minutes before</strong> the Mass starts.</p>
                         </div>
 
 
-                        <!-- LIVESTREAM -->
+                                                <!-- LIVESTREAM -->
 
                         <div class="md:col-span-2">
                             <label for="livestream_url_{{ $schedule->id }}" class="block font-semibold mb-2">
@@ -666,13 +572,6 @@
                 hour: '.mass-hour',
                 minute: '.mass-minute',
                 period: '.mass-period',
-            },
-            {
-                hidden: '.closing-date-value',
-                date: '.closing-date',
-                hour: '.closing-hour',
-                minute: '.closing-minute',
-                period: '.closing-period',
             },
         ].forEach((selectors) => {
             const hiddenDate = form.querySelector(selectors.hidden);

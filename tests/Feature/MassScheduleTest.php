@@ -17,7 +17,6 @@ class MassScheduleTest extends TestCase
             'role' => User::ROLE_ADMINISTRATOR,
         ]);
         $massDate = now()->addDays(3)->setTime(23, 30);
-        $closingAt = now()->addDays(2)->setTime(12, 45);
         $this->actingAs($admin);
 
         $this->get(route('admin.schedules'))
@@ -25,18 +24,17 @@ class MassScheduleTest extends TestCase
             ->assertSee('Add Mass Schedule')
             ->assertSee('type="date"', false)
             ->assertSee('12-hour clock')
-            ->assertSee('Closing AM or PM')
             ->assertSee('aria-label="Mass hour"', false)
             ->assertSee('aria-label="Mass minute"', false)
-            ->assertSee('aria-label="Closing hour"', false)
-            ->assertSee('aria-label="Closing minute"', false)
+            ->assertDontSee('aria-label="Closing hour"', false)
+            ->assertSee('Requests close automatically')
+            ->assertSee('10 minutes before')
             ->assertSee('value="PM"', false)
             ->assertSee('No Mass schedules yet.');
 
         $this->post(route('admin.schedules.store'), [
             'title' => 'Sunday Morning Mass',
             'mass_date' => $massDate->format('Y-m-d\TH:i'),
-            'closing_at' => $closingAt->format('Y-m-d\TH:i'),
             'is_active' => '1',
         ])
             ->assertRedirect(route('admin.schedules'))
@@ -45,7 +43,8 @@ class MassScheduleTest extends TestCase
         $schedule = MassSchedule::query()->sole();
         $this->assertTrue($schedule->is_active);
         $this->assertSame('23:30', $schedule->mass_date->format('H:i'));
-        $this->assertSame('12:45', $schedule->closing_at->format('H:i'));
+        // 11:30 PM Mass -> requests close 10 minutes earlier, at 11:20 PM.
+        $this->assertSame('23:20', $schedule->closing_at->format('H:i'));
 
         $this->get(route('admin.schedules'))
             ->assertOk()
@@ -58,7 +57,6 @@ class MassScheduleTest extends TestCase
         $this->patch(route('admin.schedules.update', $schedule), [
             'title' => 'Sunday Family Mass',
             'mass_date' => now()->addDays(5)->setTime(13, 15)->format('Y-m-d\TH:i'),
-            'closing_at' => now()->addDays(4)->setTime(11, 30)->format('Y-m-d\TH:i'),
         ])
             ->assertRedirect(route('admin.schedules'))
             ->assertSessionHas('status', 'Mass schedule updated successfully.');
@@ -66,7 +64,7 @@ class MassScheduleTest extends TestCase
         $this->assertDatabaseHas('mass_schedules', [
             'id' => $schedule->id,
             'title' => 'Sunday Family Mass',
-            'closing_at' => now()->addDays(4)->setTime(11, 30)->format('Y-m-d H:i:00'),
+            'closing_at' => now()->addDays(5)->setTime(13, 5)->format('Y-m-d H:i:00'),
             'is_active' => false,
         ]);
 
@@ -88,7 +86,6 @@ class MassScheduleTest extends TestCase
             ->post(route('admin.schedules.store'), [
                 'title' => '',
                 'mass_date' => now()->subDay()->format('Y-m-d\TH:i'),
-                'closing_at' => now()->subDays(2)->format('Y-m-d\TH:i'),
             ])
             ->assertRedirect(route('admin.schedules'))
             ->assertSessionHasErrors(['title', 'mass_date']);
@@ -96,24 +93,25 @@ class MassScheduleTest extends TestCase
         $this->assertDatabaseCount('mass_schedules', 0);
     }
 
-    public function test_schedule_closing_time_must_precede_mass_start(): void
+    public function test_schedule_closing_time_is_always_10_minutes_before_mass_start(): void
     {
         $admin = User::factory()->create([
             'role' => User::ROLE_ADMINISTRATOR,
         ]);
-        $massDate = now()->addDays(2);
+        $massDate = now()->addDays(2)->setTime(9, 0);
 
+        // A closing_at sent by the client is ignored; the server always derives it.
         $this->actingAs($admin)
-            ->from(route('admin.schedules'))
             ->post(route('admin.schedules.store'), [
                 'title' => 'Sunday Mass',
                 'mass_date' => $massDate->format('Y-m-d\TH:i'),
                 'closing_at' => $massDate->copy()->addHour()->format('Y-m-d\TH:i'),
             ])
-            ->assertRedirect(route('admin.schedules'))
-            ->assertSessionHasErrors('closing_at');
+            ->assertRedirect(route('admin.schedules'));
 
-        $this->assertDatabaseCount('mass_schedules', 0);
+        $schedule = MassSchedule::query()->sole();
+        $this->assertSame('08:50', $schedule->closing_at->format('H:i'));
+        $this->assertTrue($schedule->closing_at->lt($schedule->mass_date));
     }
 
     public function test_schedule_time_requires_the_native_datetime_picker_format(): void
@@ -127,7 +125,6 @@ class MassScheduleTest extends TestCase
             ->post(route('admin.schedules.store'), [
                 'title' => 'Evening Mass',
                 'mass_date' => now()->addDays(2)->format('Y-m-d H:i'),
-                'closing_at' => now()->addDay()->format('Y-m-d\TH:i'),
             ])
             ->assertRedirect(route('admin.schedules'))
             ->assertSessionHasErrors('mass_date');
