@@ -1,15 +1,15 @@
 @extends('layouts.user')
 
-@section('title', 'My Mass Intentions | Faith Community Platform')
+@section('title', 'Transactions | Faith Community Platform')
 
-@section('page-title', 'My Mass Intentions')
+@section('page-title', 'Transactions')
 
 @section('content')
 
 <div class="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 
     <div>
-        <h2 class="text-3xl text-gray-900">My Mass Intentions</h2>
+        <h2 class="text-3xl text-gray-900">Transactions</h2>
         <p class="font-bold italic text-gray-600 mt-1">Your requests, reference numbers and GCash payments.</p>
     </div>
 
@@ -19,7 +19,7 @@
 
 </div>
 <!-- ===================================================== -->
-<!-- MY MASS INTENTIONS -->
+<!-- TRANSACTIONS -->
 <!-- ===================================================== -->
 
 <div
@@ -44,7 +44,7 @@
 
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h3 class="text-xl font-bold">My Mass Intentions</h3>
+                <h3 class="text-xl font-bold">Transactions</h3>
                 <p class="mt-1 text-sm text-gray-600">Requests are sent to the parish administrator for review.</p>
             </div>
             <a href="{{ route('users.my-request') }}" class="font-semibold text-blue-700 underline hover:text-blue-900">

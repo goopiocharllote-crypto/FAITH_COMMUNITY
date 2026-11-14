@@ -123,7 +123,7 @@
 
         <footer class="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <a href="{{ route('mass-intentions.history') }}" class="text-sm font-semibold text-blue-700 underline hover:text-blue-900">
-                View my Mass Intentions
+                View my transactions
             </a>
             <a
                 href="{{ route('dashboard') }}"

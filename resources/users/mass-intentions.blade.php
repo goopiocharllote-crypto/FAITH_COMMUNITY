@@ -887,7 +887,7 @@
 
 
 <!-- ===================================================== -->
-<!-- LINK TO MY MASS INTENTIONS -->
+<!-- LINK TO TRANSACTIONS -->
 <!-- ===================================================== -->
 
 <div class="mt-8 flex flex-col gap-3 rounded-xl border border-gray-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -896,7 +896,7 @@
         <p class="mt-1 text-sm text-gray-600">See your reference numbers, status and GCash payments on your own page.</p>
     </div>
     <a href="{{ route('mass-intentions.history') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-blue-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200">
-        View my Mass Intentions
+        View my transactions
     </a>
 </div>
 

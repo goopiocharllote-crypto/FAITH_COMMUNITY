@@ -284,7 +284,7 @@ class MassIntentionTest extends TestCase
             ->assertSee('updateIntentionTypes', false)
             ->assertSee(route('mass-intentions.history'))
             ->assertDontSee('My family')
-            ->assertDontSee('My Mass Intentions</h3>', false);
+            ->assertDontSee('Transactions</h3>', false);
 
         $this->actingAs($user)
             ->get(route('mass-intentions.history'))

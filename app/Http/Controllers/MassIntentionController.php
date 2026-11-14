@@ -34,7 +34,7 @@ class MassIntentionController extends Controller
     /** The parishioner's own list of Mass Intention requests, on its own page. */
     public function history(Request $request): View
     {
-        return view()->file(resource_path('users/my-mass-intentions.blade.php'), [
+        return view()->file(resource_path('users/transactions.blade.php'), [
             'massIntentions' => $request->user()->massIntentions()
                 ->latest()
                 ->get(),
