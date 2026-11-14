@@ -586,7 +586,10 @@
                             "
                         >
 
-                            <option value="Thanksgiving" @selected(old('intention_type', 'Thanksgiving') === 'Thanksgiving')>
+                            <option value="" disabled @selected(! old('intention_type'))>
+                                Choose intention type
+                            </option>
+                            <option value="Thanksgiving" @selected(old('intention_type') === 'Thanksgiving')>
                                 Thanksgiving
                             </option>
 
@@ -611,6 +614,8 @@
                     </div>
 
 
+
+                    <div id="prayerSection" class="{{ old('intention_type') ? '' : 'hidden' }}">
 
                     <!-- ================================================= -->
                     <!-- SUGGESTED PRAYER -->
@@ -648,7 +653,7 @@
                                 focus:ring-2
                                 focus:ring-blue-200
                             "
-                        >{{ old('prayer', 'Lord, thank You for Your abundant blessings, love, and guidance. We are grateful for Your goodness and mercy in our lives. May we always honor You with thankful hearts. Amen.') }}</textarea>
+                        >{{ old('prayer') }}</textarea>
 
                     </div>
 
@@ -705,6 +710,8 @@
                     </div>
 
 
+
+                    </div>
 
                     <!-- ================================================= -->
                     <!-- LIGHT CANDLE BUTTON -->
@@ -790,6 +797,9 @@
                         @error('prayer')
                             <p class="mb-2 text-sm text-red-700">{{ $message }}</p>
                         @enderror
+                        <p id="typeSubmitError" class="mb-2 hidden text-sm text-red-700" role="alert">
+                            Choose an intention type first.
+                        </p>
                         <p id="candleSubmitError" class="mb-2 hidden text-sm text-red-700" role="alert">
                             Light your candle before submitting your prayer.
                         </p>
@@ -1098,6 +1108,10 @@
 
                 }
 
+                /* THE SUGGESTED PRAYER APPEARS ONLY ONCE A TYPE IS CHOSEN */
+                document.getElementById('prayerSection').classList.remove('hidden');
+                document.getElementById('typeSubmitError').classList.add('hidden');
+
                 /* TURN CANDLE OFF WHEN INTENTION CHANGES */
                 const flame =
                     document.getElementById('flame');
@@ -1245,6 +1259,12 @@
 
         } else {
 
+            if (!document.getElementById('intentionType').value) {
+                document.getElementById('typeSubmitError').classList.remove('hidden');
+                document.getElementById('intentionType').focus();
+                return;
+            }
+
             /* TURN ON */
 
             flame.classList.remove(
@@ -1264,6 +1284,16 @@
         .getElementById('candlePrayerForm')
         .addEventListener('submit', function (event) {
             const submitError = document.getElementById('candleSubmitError');
+            const typeError = document.getElementById('typeSubmitError');
+
+            if (!document.getElementById('intentionType').value) {
+                event.preventDefault();
+                typeError.classList.remove('hidden');
+                document.getElementById('intentionType').focus();
+                return;
+            }
+
+            typeError.classList.add('hidden');
 
             if (!candleIsLit) {
                 event.preventDefault();
@@ -1281,7 +1311,32 @@
         });
 
 
+        /* ========================================================= */
+    /* SHOW THE PRAYER FOR AN ALREADY-SELECTED TYPE (RELOAD / ERROR) */
     /* ========================================================= */
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+
+            const select = document.getElementById('intentionType');
+            const prayerText = document.getElementById('prayerText');
+
+            if (select.value) {
+
+                document.getElementById('prayerSection').classList.remove('hidden');
+
+                if (!prayerText.value.trim() && prayers[select.value]) {
+                    prayerText.value = prayers[select.value][0];
+                }
+
+            }
+
+        }
+    );
+
+
+/* ========================================================= */
     /* INITIAL STATE */
     /* ========================================================= */
 

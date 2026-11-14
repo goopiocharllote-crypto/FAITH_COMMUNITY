@@ -114,6 +114,27 @@ class RequestCenterTest extends TestCase
             ->assertSee('Pending');
     }
 
+    public function test_suggested_prayer_stays_hidden_until_an_intention_type_is_chosen(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('virtual-candle'))
+            ->assertOk()
+            ->assertSee('Choose intention type')
+            ->assertSee('id="prayerSection" class="hidden"', false)
+            ->assertSee('id="typeSubmitError"', false)
+            ->assertSee('Choose an intention type first.');
+
+        // After a failed submit the chosen type comes back and its prayer section stays visible.
+        $this->withSession(['_old_input' => ['intention_type' => 'Healing', 'prayer' => 'Heal them, Lord.']])
+            ->actingAs($user)
+            ->get(route('virtual-candle'))
+            ->assertOk()
+            ->assertSee('id="prayerSection" class=""', false)
+            ->assertSee('Heal them, Lord.');
+    }
+
     public function test_virtual_candle_prayer_validates_input_and_requires_parishioner_authentication(): void
     {
         $user = User::factory()->create();
