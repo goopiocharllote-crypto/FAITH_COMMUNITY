@@ -178,6 +178,11 @@ Route::middleware(['auth', 'role:parishioner'])->group(function () {
         ->name('payments.mass-intentions.submit');
 });
 
+// GCash receipt pictures: only the parishioner who paid, or an administrator (checked in the controller).
+Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])
+    ->middleware('auth')
+    ->name('payments.receipt');
+
 Route::get('/prayer-requests', fn () => view()->file(
     resource_path('index.blade.php'),
     ['announcements' => collect()]

@@ -114,7 +114,7 @@
 
                             {{ $donation->isOnline() ? 'GCash (QR code)' : 'At parish' }}
                             <p class="mt-1 text-xs font-semibold {{ $donation->isPaid() ? 'text-emerald-700' : ($donation->isPaymentSubmitted() ? 'text-sky-700' : 'text-amber-700') }}">
-                                {{ $donation->isPaid() ? 'Paid' : ($donation->isOnline() ? ($donation->isPaymentSubmitted() ? 'GCash reference submitted · verify, then approve' : 'Awaiting GCash payment') : 'Not yet received') }}
+                                {{ $donation->isPaid() ? 'Paid' : ($donation->isOnline() ? ($donation->isPaymentSubmitted() ? 'GCash receipt submitted · verify, then approve' : 'Awaiting GCash payment') : 'Not yet received') }}
                             </p>
 
                         </td>
@@ -125,7 +125,10 @@
                             {{ $donation->paymentReference() }}
                             @php($gcashPayment = $donation->payments->whereIn('status', ['submitted', 'paid'])->last())
                             @if ($gcashPayment)
-                                <p class="mt-1 text-xs text-slate-500">GCash ref. no.: {{ $gcashPayment->gateway_payment_id }} · amount to match ₱{{ number_format((float) $donation->amount, 2) }}</p>
+                                <p class="mt-1 text-xs text-slate-500">@if ($gcashPayment->gateway_payment_id)GCash ref. no.: {{ $gcashPayment->gateway_payment_id }} · @endif amount to match ₱{{ number_format((float) $donation->amount, 2) }}</p>
+                                @if ($gcashPayment->receipt)
+                                    <p class="mt-1 text-xs"><a href="{{ route('payments.receipt', $gcashPayment) }}" target="_blank" rel="noopener" class="font-semibold text-sky-700 underline hover:text-sky-900">View GCash receipt</a></p>
+                                @endif
                             @elseif ($donation->reference_number)
                                 <p class="mt-1 text-xs text-slate-500">{{ $donation->reference_number }}</p>
                             @endif

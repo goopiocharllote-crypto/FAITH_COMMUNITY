@@ -5,13 +5,14 @@ namespace App\Models;
 use App\Payments\Payable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Payment extends Model
 {
     public const STATUS_PENDING = 'pending';
 
-    /** The parishioner sent a GCash reference number; the parish office has not confirmed it yet. */
+    /** The parishioner uploaded a GCash receipt; the parish office has not confirmed it yet. */
     public const STATUS_SUBMITTED = 'submitted';
 
     public const STATUS_PAID = 'paid';
@@ -43,6 +44,11 @@ class Payment extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function receipt(): HasOne
+    {
+        return $this->hasOne(PaymentReceipt::class);
     }
 
     /** @return MorphTo<Model&Payable, $this> */

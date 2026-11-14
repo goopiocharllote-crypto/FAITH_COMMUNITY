@@ -166,7 +166,7 @@ class AdminPageController extends Controller
 
     public function donations(): View
     {
-        $donations = Donation::query()->with(['user', 'payments'])->latest()->get();
+        $donations = Donation::query()->with(['user', 'payments', 'payments.receipt:id,payment_id,mime,size'])->latest()->get();
 
         return $this->page('donations', [
             'donations' => $donations,

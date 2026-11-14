@@ -98,11 +98,16 @@
                                     <div class="mt-2 space-y-1 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
                                         <p><span class="font-semibold">Mobile:</span> {{ $massIntention->mobile }}</p>
                                         <p><span class="font-semibold">Offering:</span> ₱{{ number_format((float) $massIntention->offering_amount, 2) }}</p>
-                                        <p><span class="font-semibold">Payment:</span> {{ $massIntention->isOnline() ? 'GCash (QR code)' : 'At parish office' }} · {{ $massIntention->isPaid() ? 'Paid' : ($massIntention->isPaymentSubmitted() ? 'Reference submitted' : 'Not yet paid') }}</p>
-                                        @php($gcashReference = $massIntention->isOnline() ? app(\App\Payments\GcashPayments::class)->submittedReference($massIntention) : null)
-                                        @if ($gcashReference)
-                                            <p><span class="font-semibold">GCash reference no.:</span> {{ $gcashReference }}</p>
+                                        <p><span class="font-semibold">Payment:</span> {{ $massIntention->isOnline() ? 'GCash (QR code)' : 'At parish office' }} · {{ $massIntention->isPaid() ? 'Paid' : ($massIntention->isPaymentSubmitted() ? 'Receipt submitted' : 'Not yet paid') }}</p>
+                                        @php($gcashPayment = $massIntention->isOnline() ? app(\App\Payments\GcashPayments::class)->latestPayment($massIntention) : null)
+                                        @if ($gcashPayment)
+                                            @if ($gcashPayment->gateway_payment_id)
+                                                <p><span class="font-semibold">GCash reference no.:</span> {{ $gcashPayment->gateway_payment_id }}</p>
+                                            @endif
                                             <p><span class="font-semibold">Amount to match:</span> ₱{{ number_format((float) $massIntention->offering_amount, 2) }}</p>
+                                            @if ($gcashPayment->receipt)
+                                                <p><a href="{{ route('payments.receipt', $gcashPayment) }}" target="_blank" rel="noopener" class="font-semibold text-sky-700 underline hover:text-sky-900">View GCash receipt</a></p>
+                                            @endif
                                         @endif
                                         @if ($massIntention->additional_message)
                                             <p class="whitespace-pre-line"><span class="font-semibold">Message:</span> {{ $massIntention->additional_message }}</p>
@@ -134,8 +139,8 @@
                                     @elseif ((float) $massIntention->offering_amount <= 0)
                                         <span class="text-slate-500">No offering</span>
                                     @elseif ($massIntention->isPaymentSubmitted())
-                                        <span class="font-semibold text-sky-700">GCash reference submitted</span>
-                                        <span class="text-slate-500">· match the reference no. and amount in the parish GCash, then confirm</span>
+                                        <span class="font-semibold text-sky-700">GCash receipt submitted</span>
+                                        <span class="text-slate-500">· open the receipt, match it in the parish GCash, then confirm</span>
                                     @else
                                         <span class="font-semibold text-amber-700">Offering unpaid</span>
                                         <span class="text-slate-500">· {{ $massIntention->isOnline() ? 'awaiting GCash' : 'pay at parish' }}</span>

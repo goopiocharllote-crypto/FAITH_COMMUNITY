@@ -12,8 +12,8 @@
     <span class="text-xs text-slate-500">No payment due</span>
 @elseif ($payable->isOnline() && $payable->isPaymentSubmitted())
     <div class="flex flex-col items-start gap-2">
-        <span class="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800">GCash reference sent · awaiting parish confirmation</span>
-        <a href="{{ $payRoute }}" class="text-xs font-semibold text-blue-700 underline hover:text-blue-900">View or correct reference</a>
+        <span class="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800">GCash receipt sent · awaiting parish confirmation</span>
+        <a href="{{ $payRoute }}" class="text-xs font-semibold text-blue-700 underline hover:text-blue-900">View or re-upload receipt</a>
     </div>
 @elseif ($payable->isOnline())
     <div class="flex flex-col items-start gap-2">

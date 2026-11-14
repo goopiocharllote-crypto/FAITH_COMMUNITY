@@ -94,7 +94,7 @@ class ParishUpdate extends Notification implements ShouldQueue
         $ref = $intention->referenceNumber();
         $when = $intention->mass_date->format('M j, Y g:i A');
         $paymentLine = $intention->isOnline()
-            ? 'Please pay your ₱'.self::money($intention->offering_amount).' offering by scanning the GCash QR code on the website, then enter your GCash reference number.'
+            ? 'Please pay your ₱'.self::money($intention->offering_amount).' offering by scanning the GCash QR code on the website, then upload your GCash receipt.'
             : 'Please bring your ₱'.self::money($intention->offering_amount).' offering to the parish office.';
 
         return new self(
@@ -207,10 +207,10 @@ class ParishUpdate extends Notification implements ShouldQueue
             'donation.submitted',
             'Donation pledge received ('.$ref.')',
             $donation->isOnline()
-                ? ['Thank you for your ₱'.$amount.' donation pledge (reference '.$ref.').', 'Scan the GCash QR code on the website and enter your GCash reference number. You will receive a receipt once the parish office confirms it.']
+                ? ['Thank you for your ₱'.$amount.' donation pledge (reference '.$ref.').', 'Scan the GCash QR code on the website and upload your GCash receipt. You will get a confirmation once the parish office checks it.']
                 : ['Thank you for your ₱'.$amount.' donation pledge (reference '.$ref.').', 'Please bring your donation to the parish office and mention this reference number. We will confirm once it is received.'],
             $donation->isOnline()
-                ? 'Donation '.$ref.' of P'.$amount.' recorded. Scan the GCash QR on the website and enter your reference no.'
+                ? 'Donation '.$ref.' of P'.$amount.' recorded. Scan the GCash QR on the website and upload your receipt.'
                 : 'Donation '.$ref.' of P'.$amount.' recorded. Please give it at the parish office.',
             'View my donations',
             route('donations.index'),

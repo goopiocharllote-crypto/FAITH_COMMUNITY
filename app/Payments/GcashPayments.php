@@ -3,12 +3,15 @@
 namespace App\Payments;
 
 use App\Models\Payment;
+use App\Models\PaymentReceipt;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Manual GCash QR payments: the parishioner pays by scanning the parish QR code and then
- * submits the GCash reference number; the parish office confirms it.
+ * Manual GCash QR payments: the parishioner pays by scanning the parish QR code, then
+ * uploads the GCash receipt (and optionally the reference number); the parish office
+ * checks it and confirms the payment.
  */
 class GcashPayments
 {
@@ -33,11 +36,14 @@ class GcashPayments
     }
 
     /**
-     * Save the reference number the parishioner entered. A newer reference replaces an earlier one.
+     * Save the receipt picture (and the reference number, when given) the parishioner sent.
+     * A newer receipt replaces an earlier one.
      */
-    public function submitReference(Model&Payable $payable, string $reference): Payment
+    public function submitReceipt(Model&Payable $payable, UploadedFile $receipt, ?string $reference): Payment
     {
-        return DB::transaction(function () use ($payable, $reference): Payment {
+        $contents = (string) file_get_contents($receipt->getRealPath());
+
+        return DB::transaction(function () use ($payable, $receipt, $reference, $contents): Payment {
             $payable->payments()
                 ->whereIn('status', [Payment::STATUS_PENDING, Payment::STATUS_SUBMITTED])
                 ->update(['status' => Payment::STATUS_CANCELLED]);
@@ -49,7 +55,14 @@ class GcashPayments
                 'method' => 'GCash',
                 'gateway' => self::GATEWAY,
                 'status' => Payment::STATUS_SUBMITTED,
-                'gateway_payment_id' => $reference,
+                'gateway_payment_id' => $reference ?: null,
+            ]);
+
+            $payment->receipt()->create([
+                'mime' => (string) $receipt->getMimeType(),
+                'original_name' => mb_substr((string) $receipt->getClientOriginalName(), 0, 150),
+                'size' => strlen($contents),
+                'data' => base64_encode($contents),
             ]);
 
             $payable->markPaymentSubmitted();
@@ -68,13 +81,14 @@ class GcashPayments
             ->update(['status' => Payment::STATUS_PAID, 'paid_at' => now()]);
     }
 
-    /** The reference number the parishioner submitted for this record, if any. */
-    public function submittedReference(Model&Payable $payable): ?string
+    /** The latest submitted (or confirmed) GCash payment for this record, with its receipt loaded. */
+    public function latestPayment(Model&Payable $payable): ?Payment
     {
         return $payable->payments()
             ->whereIn('status', [Payment::STATUS_SUBMITTED, Payment::STATUS_PAID])
+            ->with('receipt:id,payment_id,mime,original_name,size,created_at')
             ->latest('id')
-            ->value('gateway_payment_id');
+            ->first();
     }
 
     /**
