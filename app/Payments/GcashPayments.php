@@ -77,11 +77,26 @@ class GcashPayments
             ->value('gateway_payment_id');
     }
 
-    /** URL of the parish GCash QR picture, or null when the image has not been added yet. */
+    /**
+     * URL of the parish GCash QR picture, or null when the image has not been added yet.
+     * The picture may be saved as png, jpg, jpeg or webp under the configured name.
+     */
     public static function qrImageUrl(): ?string
     {
         $path = config('payments.gcash.qr_image');
 
-        return $path && file_exists(public_path($path)) ? asset($path) : null;
+        if (! $path) {
+            return null;
+        }
+
+        $base = preg_replace('/\.[A-Za-z0-9]+$/', '', $path);
+
+        foreach ([$path, $base.'.png', $base.'.jpg', $base.'.jpeg', $base.'.webp'] as $candidate) {
+            if (is_file(public_path($candidate))) {
+                return asset($candidate);
+            }
+        }
+
+        return null;
     }
 }

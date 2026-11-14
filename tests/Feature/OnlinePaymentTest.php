@@ -308,6 +308,19 @@ class OnlinePaymentTest extends TestCase
             ->assertDontSee('The GCash QR code is not available yet.');
     }
 
+    public function test_the_qr_image_is_found_even_when_saved_with_a_different_extension(): void
+    {
+        // images/logo.png exists; asking for logo.jpg should fall back to it.
+        config(['payments.gcash.qr_image' => 'images/logo.jpg']);
+
+        $this->assertStringEndsWith('/images/logo.png', (string) \App\Payments\GcashPayments::qrImageUrl());
+        $this->assertNotNull(\App\Payments\GcashPayments::qrImageUrl());
+
+        // The real parish QR is committed as gcash-qr.jpeg and the default setting asks for gcash-qr.png.
+        config(['payments.gcash.qr_image' => 'images/gcash-qr.png']);
+        $this->assertNotNull(\App\Payments\GcashPayments::qrImageUrl());
+    }
+
     public function test_paymongo_is_gone(): void
     {
         $this->assertFalse(class_exists(\App\Payments\Gateways\PayMongoGateway::class));
