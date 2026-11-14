@@ -55,6 +55,8 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/admin/dashboard', AdminDashboardController::class)->name('admin.dashboard');
     Route::redirect('/admin/portal', '/admin/dashboard')->name('admin.portal');
+    // Typing just /admin lands on the dashboard (guests are sent to the login page first).
+    Route::redirect('/admin', '/admin/dashboard');
 
     Route::get('/admin/announcements', [AdminPageController::class, 'announcements'])->name('admin.announcements');
     Route::post('/admin/announcements', [AdminPageController::class, 'storeAnnouncement'])

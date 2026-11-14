@@ -42,6 +42,14 @@ class AuthenticationTest extends TestCase
             ->assertSee('name="_token"', false);
     }
 
+    public function test_admin_address_redirects_to_the_dashboard_or_login(): void
+    {
+        $this->get('/admin')->assertRedirect(route('login'));
+
+        $admin = User::factory()->create(['role' => User::ROLE_ADMINISTRATOR]);
+        $this->actingAs($admin)->get('/admin')->assertRedirect('/admin/dashboard');
+    }
+
     public function test_a_user_can_register_and_is_logged_in(): void
     {
         $response = $this->followingRedirects()->post(route('register.store'), [
