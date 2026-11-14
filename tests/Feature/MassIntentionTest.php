@@ -258,7 +258,7 @@ class MassIntentionTest extends TestCase
             ->assertSessionHas('mass_success');
 
         $this->actingAs($parishioner)
-            ->get(route('mass-intentions.index'))
+            ->get(route('mass-intentions.history'))
             ->assertOk()
             ->assertSee('MI-'.$massIntention->created_at->format('Y').'-'.str_pad((string) $massIntention->id, 6, '0', STR_PAD_LEFT))
             ->assertSee('Approved')
@@ -270,6 +270,36 @@ class MassIntentionTest extends TestCase
             'user_id' => $parishioner->id,
             'status' => 'Approved',
         ]);
+    }
+
+    public function test_the_form_and_the_list_are_on_separate_pages(): void
+    {
+        $user = User::factory()->create();
+        MassIntention::factory()->create(['user_id' => $user->id, 'intention_for' => 'My family']);
+
+        $this->actingAs($user)
+            ->get(route('mass-intentions.index'))
+            ->assertOk()
+            ->assertSee('id="mass-intention-form"', false)
+            ->assertSee('updateIntentionTypes', false)
+            ->assertSee(route('mass-intentions.history'))
+            ->assertDontSee('My family')
+            ->assertDontSee('My Mass Intentions</h3>', false);
+
+        $this->actingAs($user)
+            ->get(route('mass-intentions.history'))
+            ->assertOk()
+            ->assertSee('My family')
+            ->assertSee(route('mass-intentions.index'))
+            ->assertDontSee('updateIntentionTypes', false)
+            ->assertDontSee('id="mass-intention-form"', false);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertSee(route('mass-intentions.history'));
+
+        auth()->logout();
+        $this->get(route('mass-intentions.history'))->assertRedirect(route('login'));
     }
 
     public function test_mass_intention_page_lists_only_the_signed_in_users_requests(): void
@@ -287,14 +317,12 @@ class MassIntentionTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('mass-intentions.index'))
+            ->get(route('mass-intentions.history'))
             ->assertOk()
-            ->assertSee(route('mass-intentions.store'))
             ->assertSee(route('users.my-request'))
             ->assertSee('My family')
             ->assertDontSee('Another family')
             ->assertSee($ownRequest->intention_type)
-            ->assertSee('updateIntentionTypes', false)
             ->assertSee('MI-'.$ownRequest->created_at->format('Y').'-'.str_pad((string) $ownRequest->id, 6, '0', STR_PAD_LEFT));
     }
 
@@ -379,7 +407,7 @@ class MassIntentionTest extends TestCase
             ->assertSee('100.00')
             ->assertSee('Pay at parish office');
 
-        $this->get(route('mass-intentions.index'))
+        $this->get(route('mass-intentions.history'))
             ->assertSee(route('mass-intentions.confirmation', $massIntention))
             ->assertSee($reference);
 

@@ -29,8 +29,11 @@
         <a href="{{ route('dashboard') }}" @class(['whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/10', 'bg-white/15' => request()->routeIs('dashboard')])>
             Home
         </a>
-        <a href="{{ route('mass-intentions.index') }}" @class(['whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/10', 'bg-white/15' => request()->routeIs('mass-intentions.*')])>
+        <a href="{{ route('mass-intentions.index') }}" @class(['whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/10', 'bg-white/15' => request()->routeIs('mass-intentions.index', 'mass-intentions.store')])>
             Mass Intentions
+        </a>
+        <a href="{{ route('mass-intentions.history') }}" @class(['whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/10', 'bg-white/15' => request()->routeIs('mass-intentions.history', 'mass-intentions.confirmation', 'payments.*')])>
+            My Mass Intentions
         </a>
         <a href="{{ route('virtual-candle') }}" @class(['whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/10', 'bg-white/15' => request()->routeIs('virtual-candle')])>
             Virtual Candle

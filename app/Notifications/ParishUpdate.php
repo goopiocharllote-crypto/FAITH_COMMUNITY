@@ -108,7 +108,7 @@ class ParishUpdate extends Notification implements ShouldQueue
             ],
             'Booking confirmation '.$ref.': '.$when.'. Pending approval.',
             'View my Mass Intentions',
-            route('mass-intentions.index'),
+            route('mass-intentions.history'),
         );
     }
 
@@ -156,7 +156,7 @@ class ParishUpdate extends Notification implements ShouldQueue
             ['The parish office received your ₱'.self::money($intention->offering_amount).' offering for Mass Intention '.$ref.'.', 'Thank you for your generosity.'],
             'Offering of P'.self::money($intention->offering_amount).' for Mass Intention '.$ref.' received. Thank you!',
             'View my Mass Intentions',
-            route('mass-intentions.index'),
+            route('mass-intentions.history'),
         );
     }
 

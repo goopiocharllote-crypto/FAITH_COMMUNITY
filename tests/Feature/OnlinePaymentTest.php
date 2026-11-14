@@ -297,7 +297,7 @@ class OnlinePaymentTest extends TestCase
             && str_contains($n->url, 'admin/mass-intentions'));
 
         $this->actingAs($user)
-            ->get(route('mass-intentions.index'))
+            ->get(route('mass-intentions.history'))
             ->assertSee('awaiting parish confirmation');
 
         $this->actingAs($admin)
@@ -320,7 +320,7 @@ class OnlinePaymentTest extends TestCase
         Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n) => $n->kind === 'mass_intention.offering_received');
 
         $this->actingAs($user)
-            ->get(route('mass-intentions.index'))
+            ->get(route('mass-intentions.history'))
             ->assertSee('Paid · GCash');
     }
 

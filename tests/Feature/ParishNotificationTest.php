@@ -133,7 +133,7 @@ class ParishNotificationTest extends TestCase
         $this->assertStringContainsString($intention->referenceNumber(), $mail->subject);
         $this->assertStringContainsString('Hello Maria Clara', $html);
         $this->assertStringContainsString('pay your ₱100.00 offering by scanning the GCash QR code', $html);
-        $this->assertSame(route('mass-intentions.index'), $mail->actionUrl);
+        $this->assertSame(route('mass-intentions.history'), $mail->actionUrl);
     }
 
     public function test_booking_confirmation_sms_goes_to_the_number_entered_on_the_booking_form(): void

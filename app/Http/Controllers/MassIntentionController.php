@@ -18,9 +18,6 @@ class MassIntentionController extends Controller
         $user = $request->user();
 
         return view()->file(resource_path('users/mass-intentions.blade.php'), [
-            'massIntentions' => $user->massIntentions()
-                ->latest()
-                ->get(),
             'upcomingSchedules' => MassSchedule::query()
                 ->where('is_active', true)
                 ->where('mass_date', '>', now())
@@ -31,6 +28,16 @@ class MassIntentionController extends Controller
                 ->whereNotNull('schedule_id')
                 ->pluck('schedule_id')
                 ->all(),
+        ]);
+    }
+
+    /** The parishioner's own list of Mass Intention requests, on its own page. */
+    public function history(Request $request): View
+    {
+        return view()->file(resource_path('users/my-mass-intentions.blade.php'), [
+            'massIntentions' => $request->user()->massIntentions()
+                ->latest()
+                ->get(),
         ]);
     }
 

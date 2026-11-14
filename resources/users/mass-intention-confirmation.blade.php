@@ -121,7 +121,10 @@
 
         </div>
 
-        <footer class="flex justify-end border-t border-slate-200 bg-slate-50 px-6 py-4">
+        <footer class="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <a href="{{ route('mass-intentions.history') }}" class="text-sm font-semibold text-blue-700 underline hover:text-blue-900">
+                View my Mass Intentions
+            </a>
             <a
                 href="{{ route('dashboard') }}"
                 class="inline-flex items-center justify-center rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200"
