@@ -4,7 +4,6 @@ namespace App\Notifications;
 
 use App\Models\Donation;
 use App\Models\MassIntention;
-use App\Models\Payment;
 use App\Models\PrayerRequest;
 use App\Notifications\Channels\SmsChannel;
 use Illuminate\Bus\Queueable;
@@ -95,7 +94,7 @@ class ParishUpdate extends Notification implements ShouldQueue
         $ref = $intention->referenceNumber();
         $when = $intention->mass_date->format('M j, Y g:i A');
         $paymentLine = $intention->isOnline()
-            ? 'Please complete your ₱'.self::money($intention->offering_amount).' GCash offering if you have not yet done so.'
+            ? 'Please pay your ₱'.self::money($intention->offering_amount).' offering by scanning the GCash QR code on the website, then enter your GCash reference number.'
             : 'Please bring your ₱'.self::money($intention->offering_amount).' offering to the parish office.';
 
         return new self(
@@ -208,10 +207,10 @@ class ParishUpdate extends Notification implements ShouldQueue
             'donation.submitted',
             'Donation pledge received ('.$ref.')',
             $donation->isOnline()
-                ? ['Thank you for your ₱'.$amount.' donation pledge (reference '.$ref.').', 'Complete the GCash payment to finish your donation. You will receive a receipt once it is paid.']
+                ? ['Thank you for your ₱'.$amount.' donation pledge (reference '.$ref.').', 'Scan the GCash QR code on the website and enter your GCash reference number. You will receive a receipt once the parish office confirms it.']
                 : ['Thank you for your ₱'.$amount.' donation pledge (reference '.$ref.').', 'Please bring your donation to the parish office and mention this reference number. We will confirm once it is received.'],
             $donation->isOnline()
-                ? 'Donation '.$ref.' of P'.$amount.' recorded. Complete GCash payment to finish.'
+                ? 'Donation '.$ref.' of P'.$amount.' recorded. Scan the GCash QR on the website and enter your reference no.'
                 : 'Donation '.$ref.' of P'.$amount.' recorded. Please give it at the parish office.',
             'View my donations',
             route('donations.index'),
@@ -234,27 +233,6 @@ class ParishUpdate extends Notification implements ShouldQueue
                 : 'Donation '.$ref.' could not be confirmed. Please contact the parish office.',
             'View my donations',
             route('donations.index'),
-        );
-    }
-
-    public static function paymentReceived(Payment $payment): self
-    {
-        $payable = $payment->payable;
-        $ref = $payable->paymentReference();
-        $amount = self::money($payment->amount);
-        $what = $payable instanceof Donation ? 'donation' : 'Mass Intention offering';
-
-        return new self(
-            'payment.received',
-            'GCash payment received ('.$ref.')',
-            [
-                'We received your GCash payment of ₱'.$amount.' for your '.$what.' (reference '.$ref.').',
-                'Payment ID: '.($payment->gateway_payment_id ?? $payment->checkout_id).'.',
-                'Thank you for your generosity.',
-            ],
-            'GCash payment of P'.$amount.' for '.$ref.' received. Thank you!',
-            'View details',
-            $payable->paymentReturnRoute(),
         );
     }
 

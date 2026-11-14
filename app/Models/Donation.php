@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use App\Payments\Payable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Donation extends Model implements Payable
 {
+    use HasFactory;
+
     public const METHOD_ONLINE = 'GCash';
 
     public const METHOD_PARISH = 'Cash';
@@ -77,11 +80,26 @@ class Donation extends Model implements Payable
 
     public function markAsPaid(): void
     {
-        // A confirmed GCash payment is proof of receipt, so no manual verification is needed.
+        // The parish office confirmed the money arrived.
         $this->forceFill([
             'payment_status' => 'Paid',
             'status' => 'Approved',
         ])->save();
+    }
+
+    public function isPaymentSubmitted(): bool
+    {
+        return $this->payment_status === 'Verifying';
+    }
+
+    public function markPaymentSubmitted(): void
+    {
+        $this->forceFill(['payment_status' => 'Verifying'])->save();
+    }
+
+    public function paymentPageUrl(): string
+    {
+        return route('payments.donations.pay', $this);
     }
 
     public function paymentReturnRoute(): string

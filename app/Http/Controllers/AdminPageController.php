@@ -10,6 +10,7 @@ use App\Models\MassSchedule;
 use App\Models\PrayerRequest;
 use App\Models\User;
 use App\Notifications\ParishUpdate;
+use App\Payments\GcashPayments;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -296,7 +297,14 @@ class AdminPageController extends Controller
             ]);
         }
 
+        if ($massIntention->isOnline() && ! $massIntention->isPaymentSubmitted()) {
+            return back()->withErrors([
+                'mass_intention' => 'The parishioner has not submitted a GCash reference number yet.',
+            ]);
+        }
+
         $massIntention->markAsPaid();
+        app(GcashPayments::class)->recordConfirmed($massIntention);
         $massIntention->user->notify(ParishUpdate::massIntentionOfferingReceived($massIntention));
 
         return back()->with('mass_success', 'Offering marked as received.');

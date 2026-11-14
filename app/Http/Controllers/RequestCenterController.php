@@ -8,10 +8,10 @@ use App\Models\MassSchedule;
 use App\Models\PrayerRequest;
 use App\Models\User;
 use App\Notifications\ParishUpdate;
+use App\Payments\GcashPayments;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RequestCenterController extends Controller
@@ -95,22 +95,15 @@ class RequestCenterController extends Controller
             'message' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $minimumOnline = (float) config('payments.minimum_online_amount');
-
-        if ($validated['payment_method'] === Donation::METHOD_ONLINE && (float) $validated['amount'] < $minimumOnline) {
-            throw ValidationException::withMessages([
-                'amount' => __('GCash donations must be at least ₱:amount. Choose "Donate at the parish" for smaller amounts.', [
-                    'amount' => number_format($minimumOnline, 2),
-                ]),
-            ]);
-        }
 
         /** @var Donation $donation */
         $donation = $request->user()->donations()->create($validated);
         $request->user()->notify(ParishUpdate::donationSubmitted($donation));
 
         if ($donation->isOnline()) {
-            return app(PaymentController::class)->redirectToCheckout($donation);
+            return redirect()
+                ->route('payments.donations.pay', $donation)
+                ->with('status', __('Thank you! Scan the GCash QR code below to complete your donation.'));
         }
 
         return redirect()
@@ -151,6 +144,11 @@ class RequestCenterController extends Controller
         }
 
         $donation->save();
+
+        if ($status === 'Approved' && $donation->isOnline()) {
+            app(GcashPayments::class)->recordConfirmed($donation);
+        }
+
         $donation->user->notify(ParishUpdate::donationReviewed($donation));
 
         return back()->with('status', $status === 'Approved'

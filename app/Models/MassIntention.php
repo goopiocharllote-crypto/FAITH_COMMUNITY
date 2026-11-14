@@ -91,6 +91,21 @@ class MassIntention extends Model implements Payable
         $this->forceFill(['payment_status' => 'Paid'])->save();
     }
 
+    public function isPaymentSubmitted(): bool
+    {
+        return $this->payment_status === 'Verifying';
+    }
+
+    public function markPaymentSubmitted(): void
+    {
+        $this->forceFill(['payment_status' => 'Verifying'])->save();
+    }
+
+    public function paymentPageUrl(): string
+    {
+        return route('payments.mass-intentions.pay', $this);
+    }
+
     public function paymentReturnRoute(): string
     {
         return route('mass-intentions.confirmation', $this);

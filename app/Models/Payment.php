@@ -11,6 +11,9 @@ class Payment extends Model
 {
     public const STATUS_PENDING = 'pending';
 
+    /** The parishioner sent a GCash reference number; the parish office has not confirmed it yet. */
+    public const STATUS_SUBMITTED = 'submitted';
+
     public const STATUS_PAID = 'paid';
 
     public const STATUS_FAILED = 'failed';

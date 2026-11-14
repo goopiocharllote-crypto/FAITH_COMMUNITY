@@ -165,16 +165,16 @@ Route::middleware(['auth', 'role:parishioner'])->group(function () {
     Route::redirect('/donation', '/donations')->name('donation');
     Route::post('/donations', [RequestCenterController::class, 'storeDonation'])->name('donations.store');
 
-    // GCash online payments
-    Route::post('/donations/{donation}/pay', [PaymentController::class, 'payDonation'])->name('payments.donations.pay');
-    Route::post('/mass-intentions/{massIntention}/pay', [PaymentController::class, 'payMassIntention'])->name('payments.mass-intentions.pay');
-    Route::get('/payments/{payment}/return', [PaymentController::class, 'return'])->name('payments.return');
-    Route::get('/payments/{payment}/gcash-simulator', [PaymentController::class, 'showSimulator'])->name('payments.simulator.show');
-    Route::post('/payments/{payment}/gcash-simulator', [PaymentController::class, 'completeSimulator'])->name('payments.simulator.complete');
+    // GCash QR payments: show the QR code, then take the GCash reference number.
+    Route::get('/donations/{donation}/gcash', [PaymentController::class, 'showDonation'])->name('payments.donations.pay');
+    Route::post('/donations/{donation}/gcash', [PaymentController::class, 'submitDonation'])
+        ->middleware('throttle:10,1')
+        ->name('payments.donations.submit');
+    Route::get('/mass-intentions/{massIntention}/gcash', [PaymentController::class, 'showMassIntention'])->name('payments.mass-intentions.pay');
+    Route::post('/mass-intentions/{massIntention}/gcash', [PaymentController::class, 'submitMassIntention'])
+        ->middleware('throttle:10,1')
+        ->name('payments.mass-intentions.submit');
 });
-
-// PayMongo calls this server-to-server, so it has no session/CSRF token (signature-verified instead).
-Route::post('/webhooks/paymongo', [PaymentController::class, 'webhook'])->name('payments.webhook');
 
 Route::get('/prayer-requests', fn () => view()->file(
     resource_path('index.blade.php'),

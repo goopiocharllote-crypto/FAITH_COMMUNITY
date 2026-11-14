@@ -112,9 +112,9 @@
 
                         <td class="px-6 py-4">
 
-                            {{ $donation->isOnline() ? 'GCash (online)' : 'At parish' }}
-                            <p class="mt-1 text-xs font-semibold {{ $donation->isPaid() ? 'text-emerald-700' : 'text-amber-700' }}">
-                                {{ $donation->isPaid() ? 'Paid' : ($donation->isOnline() ? 'Awaiting GCash payment' : 'Not yet received') }}
+                            {{ $donation->isOnline() ? 'GCash (QR code)' : 'At parish' }}
+                            <p class="mt-1 text-xs font-semibold {{ $donation->isPaid() ? 'text-emerald-700' : ($donation->isPaymentSubmitted() ? 'text-sky-700' : 'text-amber-700') }}">
+                                {{ $donation->isPaid() ? 'Paid' : ($donation->isOnline() ? ($donation->isPaymentSubmitted() ? 'GCash reference submitted · verify, then approve' : 'Awaiting GCash payment') : 'Not yet received') }}
                             </p>
 
                         </td>
@@ -123,9 +123,9 @@
                         <td class="px-6 py-4">
 
                             {{ $donation->paymentReference() }}
-                            @php($gcashPayment = $donation->payments->firstWhere('status', 'paid'))
+                            @php($gcashPayment = $donation->payments->whereIn('status', ['submitted', 'paid'])->last())
                             @if ($gcashPayment)
-                                <p class="mt-1 text-xs text-slate-500">GCash ID: {{ $gcashPayment->gateway_payment_id ?? $gcashPayment->checkout_id }}</p>
+                                <p class="mt-1 text-xs text-slate-500">GCash ref. no.: {{ $gcashPayment->gateway_payment_id }}</p>
                             @elseif ($donation->reference_number)
                                 <p class="mt-1 text-xs text-slate-500">{{ $donation->reference_number }}</p>
                             @endif

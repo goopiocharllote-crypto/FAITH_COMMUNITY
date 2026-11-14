@@ -98,7 +98,11 @@
                                     <div class="mt-2 space-y-1 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
                                         <p><span class="font-semibold">Mobile:</span> {{ $massIntention->mobile }}</p>
                                         <p><span class="font-semibold">Offering:</span> ₱{{ number_format((float) $massIntention->offering_amount, 2) }}</p>
-                                        <p><span class="font-semibold">Payment:</span> {{ $massIntention->isOnline() ? 'GCash (online)' : 'At parish office' }} · {{ $massIntention->isPaid() ? 'Paid' : 'Not yet paid' }}</p>
+                                        <p><span class="font-semibold">Payment:</span> {{ $massIntention->isOnline() ? 'GCash (QR code)' : 'At parish office' }} · {{ $massIntention->isPaid() ? 'Paid' : ($massIntention->isPaymentSubmitted() ? 'Reference submitted' : 'Not yet paid') }}</p>
+                                        @php($gcashReference = $massIntention->isOnline() ? app(\App\Payments\GcashPayments::class)->submittedReference($massIntention) : null)
+                                        @if ($gcashReference)
+                                            <p><span class="font-semibold">GCash reference no.:</span> {{ $gcashReference }}</p>
+                                        @endif
                                         @if ($massIntention->additional_message)
                                             <p class="whitespace-pre-line"><span class="font-semibold">Message:</span> {{ $massIntention->additional_message }}</p>
                                         @endif
@@ -128,16 +132,19 @@
                                         <span class="text-slate-500">· {{ $massIntention->isOnline() ? 'GCash' : 'at parish' }}</span>
                                     @elseif ((float) $massIntention->offering_amount <= 0)
                                         <span class="text-slate-500">No offering</span>
+                                    @elseif ($massIntention->isPaymentSubmitted())
+                                        <span class="font-semibold text-sky-700">GCash reference submitted</span>
+                                        <span class="text-slate-500">· check it in the parish GCash, then confirm</span>
                                     @else
                                         <span class="font-semibold text-amber-700">Offering unpaid</span>
                                         <span class="text-slate-500">· {{ $massIntention->isOnline() ? 'awaiting GCash' : 'pay at parish' }}</span>
                                     @endif
                                 </p>
-                                @if (! $massIntention->isPaid() && ! $massIntention->isOnline() && (float) $massIntention->offering_amount > 0 && $massIntention->status !== 'Rejected')
+                                @if (! $massIntention->isPaid() && (! $massIntention->isOnline() || $massIntention->isPaymentSubmitted()) && (float) $massIntention->offering_amount > 0 && $massIntention->status !== 'Rejected')
                                     <form method="POST" action="{{ route('admin.mass-intentions.offering-received', $massIntention) }}" class="mt-2">
                                         @csrf
                                         @method('PATCH')
-                                        <button type="submit" class="rounded-lg border border-emerald-600 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100">Mark offering received</button>
+                                        <button type="submit" class="rounded-lg border border-emerald-600 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100">{{ $massIntention->isOnline() ? 'Confirm GCash payment' : 'Mark offering received' }}</button>
                                     </form>
                                 @endif
                             </td>

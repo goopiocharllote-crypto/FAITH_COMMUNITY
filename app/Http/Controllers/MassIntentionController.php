@@ -55,15 +55,6 @@ class MassIntentionController extends Controller
         ]);
 
         $validated['payment_method'] ??= MassIntention::METHOD_PARISH;
-        $minimumOnline = (float) config('payments.minimum_online_amount');
-
-        if ($validated['payment_method'] === MassIntention::METHOD_ONLINE && (float) $validated['offering_amount'] < $minimumOnline) {
-            throw ValidationException::withMessages([
-                'offering_amount' => __('GCash offerings must be at least ₱:amount. Choose "Pay at the parish office" for smaller amounts.', [
-                    'amount' => number_format($minimumOnline, 2),
-                ]),
-            ]);
-        }
 
         $schedule = MassSchedule::query()->findOrFail($validated['schedule_id']);
 
@@ -100,7 +91,9 @@ class MassIntentionController extends Controller
         );
 
         if ($intention->isOnline() && (float) $intention->offering_amount > 0) {
-            return app(PaymentController::class)->redirectToCheckout($intention);
+            return redirect()
+                ->route('payments.mass-intentions.pay', $intention)
+                ->with('status', __('Your Mass Intention request has been submitted. Scan the GCash QR code below to pay your offering.'));
         }
 
         return redirect()

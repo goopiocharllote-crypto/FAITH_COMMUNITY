@@ -8,14 +8,14 @@ use App\Models\MassSchedule;
 use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\ParishUpdate;
-use App\Payments\Gateways\PayMongoGateway;
-use App\Payments\PaymentGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\Client\Request as HttpRequest;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
+/**
+ * GCash QR payments: the parishioner scans the parish QR code, enters the GCash reference
+ * number, and the parish office confirms the payment.
+ */
 class OnlinePaymentTest extends TestCase
 {
     use RefreshDatabase;
@@ -24,173 +24,226 @@ class OnlinePaymentTest extends TestCase
     {
         parent::setUp();
 
-        config(['payments.gateway' => 'simulator']);
         Notification::fake();
     }
 
-    public function test_gcash_donation_goes_through_checkout_and_is_marked_received_when_paid(): void
+    public function test_gcash_donation_shows_the_qr_page_and_waits_for_the_parish_to_confirm(): void
     {
         $user = User::factory()->create(['mobile' => '9171234567']);
 
-        $response = $this->actingAs($user)->post(route('donations.store'), [
-            'amount' => '250.00',
-            'payment_method' => 'GCash',
-            'message' => 'For the feast day',
-        ]);
+        $this->actingAs($user)
+            ->post(route('donations.store'), [
+                'amount' => '250.00',
+                'payment_method' => 'GCash',
+                'message' => 'For the feast day',
+            ])
+            ->assertRedirect(route('payments.donations.pay', Donation::query()->sole()));
 
         $donation = Donation::query()->sole();
-        $payment = Payment::query()->sole();
-
-        $response->assertRedirect(route('payments.simulator.show', $payment));
-        $this->assertSame('pending', $payment->status);
-        $this->assertSame('250.00', $payment->amount);
-        $this->assertTrue($payment->payable->is($donation));
+        $this->assertSame(0, Payment::query()->count());
         Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n) => $n->kind === 'donation.submitted');
 
         $this->actingAs($user)
-            ->get(route('payments.simulator.show', $payment))
+            ->get(route('payments.donations.pay', $donation))
             ->assertOk()
-            ->assertSee('Test mode')
             ->assertSee('₱250.00')
-            ->assertSee($donation->paymentReference());
+            ->assertSee($donation->paymentReference())
+            ->assertSee('Scan the parish QR code below')
+            ->assertSee('13-digit reference number')
+            ->assertSee(route('payments.donations.submit', $donation));
 
         $this->actingAs($user)
-            ->post(route('payments.simulator.complete', $payment), ['decision' => 'pay'])
-            ->assertRedirect(route('payments.return', ['payment' => $payment, 'result' => 'success']));
-
-        $this->actingAs($user)
-            ->get(route('payments.return', ['payment' => $payment, 'result' => 'success']))
+            ->post(route('payments.donations.submit', $donation), ['reference_number' => '1234 567 890 123'])
             ->assertRedirect(route('donations.index'))
-            ->assertSessionHas('status', fn (string $status) => str_contains($status, 'GCash payment of ₱250.00 received'));
+            ->assertSessionHas('status', fn (string $status) => str_contains($status, '1234567890123'));
 
-        $this->assertSame('paid', $payment->fresh()->status);
-        $this->assertNotNull($payment->fresh()->paid_at);
+        $payment = Payment::query()->sole();
+        $this->assertSame('submitted', $payment->status);
+        $this->assertSame('1234567890123', $payment->gateway_payment_id);
+        $this->assertSame('gcash_qr', $payment->gateway);
+        $this->assertSame('250.00', $payment->amount);
+        $this->assertSame('Verifying', $donation->fresh()->payment_status);
+        $this->assertSame('Pending', $donation->fresh()->status);
+
+        $this->actingAs($user)
+            ->get(route('donations.index'))
+            ->assertSee('awaiting parish confirmation')
+            ->assertDontSee('Pay ₱250.00 with GCash');
+
+        $admin = User::factory()->create(['role' => User::ROLE_ADMINISTRATOR]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.donations'))
+            ->assertSee('GCash ref. no.: 1234567890123')
+            ->assertSee('GCash reference submitted');
+
+        $this->actingAs($admin)
+            ->patch(route('admin.donations.approve', $donation))
+            ->assertSessionHas('status');
+
         $this->assertSame('Paid', $donation->fresh()->payment_status);
         $this->assertSame('Approved', $donation->fresh()->status);
-        Notification::assertSentToTimes($user, ParishUpdate::class, 2);
-        Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n) => $n->kind === 'payment.received');
+        $this->assertSame('paid', $payment->fresh()->status);
+        $this->assertNotNull($payment->fresh()->paid_at);
+        Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n) => $n->kind === 'donation.approved');
 
         $this->actingAs($user)
             ->get(route('donations.index'))
-            ->assertSee('Paid · GCash')
-            ->assertDontSee('Pay ₱250.00 with GCash');
+            ->assertSee('Paid · GCash');
     }
 
-    public function test_cancelled_gcash_checkout_keeps_the_donation_and_it_can_be_paid_later(): void
+    public function test_reference_number_must_have_13_digits(): void
     {
         $user = User::factory()->create();
+        $donation = Donation::factory()->create(['user_id' => $user->id, 'payment_method' => 'GCash', 'amount' => 100]);
 
-        $this->actingAs($user)->post(route('donations.store'), ['amount' => '100', 'payment_method' => 'GCash']);
-        $first = Payment::query()->sole();
+        foreach (['', 'abc', '12345', '12345678901234'] as $bad) {
+            $this->actingAs($user)
+                ->from(route('payments.donations.pay', $donation))
+                ->post(route('payments.donations.submit', $donation), ['reference_number' => $bad])
+                ->assertRedirect(route('payments.donations.pay', $donation))
+                ->assertSessionHasErrors('reference_number');
+        }
 
-        $this->actingAs($user)->post(route('payments.simulator.complete', $first), ['decision' => 'cancel']);
-        $this->actingAs($user)
-            ->get(route('payments.return', ['payment' => $first, 'result' => 'cancel']))
-            ->assertRedirect(route('donations.index'))
-            ->assertSessionHasErrors('payment');
-
-        $donation = Donation::query()->sole();
-        $this->assertSame('cancelled', $first->fresh()->status);
-        $this->assertSame('Pending', $donation->payment_status);
-
-        $this->actingAs($user)
-            ->get(route('donations.index'))
-            ->assertSee('Pay ₱100.00 with GCash')
-            ->assertSee(route('payments.donations.pay', $donation));
-
-        $this->actingAs($user)
-            ->post(route('payments.donations.pay', $donation))
-            ->assertRedirect();
-
-        $this->assertSame(2, Payment::query()->count());
-        $this->assertSame('pending', Payment::query()->latest('id')->first()->status);
+        $this->assertDatabaseCount('payments', 0);
+        $this->assertSame('Pending', $donation->fresh()->payment_status);
     }
 
-    public function test_starting_a_new_checkout_supersedes_an_abandoned_one(): void
+    public function test_a_reference_number_cannot_be_reused_for_another_payment(): void
     {
         $user = User::factory()->create();
-
-        $this->actingAs($user)->post(route('donations.store'), ['amount' => '100', 'payment_method' => 'GCash']);
-        $donation = Donation::query()->sole();
-        $abandoned = Payment::query()->sole();
-
-        $this->actingAs($user)->post(route('payments.donations.pay', $donation));
-
-        $this->assertSame('cancelled', $abandoned->fresh()->status);
-        $this->assertSame(1, Payment::query()->where('status', 'pending')->count());
-    }
-
-    public function test_gcash_amount_must_meet_the_minimum_and_parish_option_has_no_checkout(): void
-    {
-        $user = User::factory()->create();
+        $first = Donation::factory()->create(['user_id' => $user->id, 'payment_method' => 'GCash', 'amount' => 100]);
+        $second = Donation::factory()->create(['user_id' => $user->id, 'payment_method' => 'GCash', 'amount' => 100]);
 
         $this->actingAs($user)
-            ->from(route('donations.index'))
-            ->post(route('donations.store'), ['amount' => '10', 'payment_method' => 'GCash'])
-            ->assertRedirect(route('donations.index'))
-            ->assertSessionHasErrors('amount');
+            ->post(route('payments.donations.submit', $first), ['reference_number' => '1111222233334']);
 
-        $this->assertDatabaseCount('donations', 0);
+        $this->actingAs($user)
+            ->from(route('payments.donations.pay', $second))
+            ->post(route('payments.donations.submit', $second), ['reference_number' => '1111222233334'])
+            ->assertSessionHasErrors('reference_number');
+
+        $this->assertDatabaseCount('payments', 1);
+        $this->assertSame('Pending', $second->fresh()->payment_status);
+    }
+
+    public function test_a_wrong_reference_can_be_corrected_and_only_the_latest_counts(): void
+    {
+        $user = User::factory()->create();
+        $donation = Donation::factory()->create(['user_id' => $user->id, 'payment_method' => 'GCash', 'amount' => 100]);
+
+        $this->actingAs($user)->post(route('payments.donations.submit', $donation), ['reference_number' => '1111222233334']);
+        $this->actingAs($user)->post(route('payments.donations.submit', $donation), ['reference_number' => '5555666677778']);
+
+        $this->assertSame(1, Payment::query()->where('status', 'submitted')->count());
+        $this->assertSame('5555666677778', Payment::query()->where('status', 'submitted')->sole()->gateway_payment_id);
+        $this->assertSame(1, Payment::query()->where('status', 'cancelled')->count());
+
+        $this->actingAs($user)
+            ->get(route('payments.donations.pay', $donation))
+            ->assertSee('Reference number submitted: 5555666677778');
+    }
+
+    public function test_pay_at_parish_donations_have_no_qr_payment(): void
+    {
+        $user = User::factory()->create();
 
         $this->actingAs($user)
             ->post(route('donations.store'), ['amount' => '10', 'payment_method' => 'Cash'])
             ->assertRedirect(route('donations.index'));
 
-        $this->assertDatabaseCount('donations', 1);
+        $donation = Donation::query()->sole();
         $this->assertDatabaseCount('payments', 0);
+
+        $this->actingAs($user)
+            ->get(route('payments.donations.pay', $donation))
+            ->assertRedirect(route('donations.index'))
+            ->assertSessionHasErrors('payment');
     }
 
-    public function test_mass_intention_offering_can_be_paid_through_gcash(): void
+    public function test_small_gcash_amounts_are_allowed(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('donations.store'), ['amount' => '5', 'payment_method' => 'GCash'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseCount('donations', 1);
+    }
+
+    public function test_mass_intention_offering_is_paid_with_the_qr_code_and_confirmed_by_the_admin(): void
     {
         $user = User::factory()->create();
         $schedule = $this->openSchedule();
 
-        $response = $this->actingAs($user)->post(route('mass-intentions.store'), [
+        $this->actingAs($user)->post(route('mass-intentions.store'), [
             'intention_type' => 'Healing',
             'intention_for' => 'Lola Rosa',
             'schedule_id' => $schedule->id,
             'mobile' => '9171234567',
             'offering_amount' => '150.00',
             'payment_method' => 'GCash',
-        ]);
+        ])->assertRedirect(route('payments.mass-intentions.pay', MassIntention::query()->sole()));
 
         $intention = MassIntention::query()->sole();
-        $payment = Payment::query()->sole();
-        $response->assertRedirect(route('payments.simulator.show', $payment));
         $this->assertSame('GCash', $intention->payment_method);
+        $this->assertSame('Pending', $intention->payment_status);
 
-        $this->actingAs($user)->post(route('payments.simulator.complete', $payment), ['decision' => 'pay']);
         $this->actingAs($user)
-            ->get(route('payments.return', ['payment' => $payment, 'result' => 'success']))
+            ->get(route('payments.mass-intentions.pay', $intention))
+            ->assertOk()
+            ->assertSee('₱150.00')
+            ->assertSee($intention->referenceNumber());
+
+        $this->actingAs($user)
+            ->post(route('payments.mass-intentions.submit', $intention), ['reference_number' => '9988776655443'])
             ->assertRedirect(route('mass-intentions.confirmation', $intention));
 
-        $this->assertSame('Paid', $intention->fresh()->payment_status);
+        $this->assertSame('Verifying', $intention->fresh()->payment_status);
         // Paying does not approve the intention; the parish office still reviews it.
         $this->assertSame('Pending', $intention->fresh()->status);
+
+        $this->actingAs($user)
+            ->get(route('mass-intentions.index'))
+            ->assertSee('awaiting parish confirmation');
+
+        $admin = User::factory()->create(['role' => User::ROLE_ADMINISTRATOR]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.mass-intentions'))
+            ->assertSee('GCash reference no.:')
+            ->assertSee('9988776655443')
+            ->assertSee('Confirm GCash payment')
+            ->assertSee(route('admin.mass-intentions.offering-received', $intention));
+
+        $this->actingAs($admin)
+            ->patch(route('admin.mass-intentions.offering-received', $intention))
+            ->assertSessionHas('mass_success');
+
+        $this->assertSame('Paid', $intention->fresh()->payment_status);
+        $this->assertSame('paid', Payment::query()->sole()->status);
+        Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n) => $n->kind === 'mass_intention.offering_received');
 
         $this->actingAs($user)
             ->get(route('mass-intentions.index'))
             ->assertSee('Paid · GCash');
     }
 
-    public function test_gcash_offering_below_minimum_is_rejected(): void
+    public function test_admin_cannot_confirm_a_gcash_offering_before_a_reference_is_submitted(): void
     {
-        $user = User::factory()->create();
-        $schedule = $this->openSchedule();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMINISTRATOR]);
+        $intention = MassIntention::factory()->create(['payment_method' => 'GCash', 'offering_amount' => 200]);
 
-        $this->actingAs($user)
-            ->from(route('mass-intentions.index'))
-            ->post(route('mass-intentions.store'), [
-                'intention_type' => 'Souls',
-                'intention_for' => 'Lolo Ben',
-                'schedule_id' => $schedule->id,
-                'mobile' => '9171234567',
-                'offering_amount' => '5',
-                'payment_method' => 'GCash',
-            ])
-            ->assertSessionHasErrors('offering_amount');
+        $this->actingAs($admin)
+            ->get(route('admin.mass-intentions'))
+            ->assertDontSee('Confirm GCash payment');
 
-        $this->assertDatabaseCount('mass_intentions', 0);
+        $this->actingAs($admin)
+            ->patch(route('admin.mass-intentions.offering-received', $intention))
+            ->assertSessionHasErrors('mass_intention');
+
+        $this->assertSame('Pending', $intention->fresh()->payment_status);
     }
 
     public function test_admin_can_mark_a_pay_at_parish_offering_received(): void
@@ -222,164 +275,44 @@ class OnlinePaymentTest extends TestCase
     {
         $owner = User::factory()->create();
         $other = User::factory()->create();
+        $donation = Donation::factory()->create(['user_id' => $owner->id, 'payment_method' => 'GCash', 'amount' => 100]);
 
-        $this->actingAs($owner)->post(route('donations.store'), ['amount' => '100', 'payment_method' => 'GCash']);
-        $donation = Donation::query()->sole();
-        $payment = Payment::query()->sole();
+        $this->actingAs($other)->get(route('payments.donations.pay', $donation))->assertForbidden();
+        $this->actingAs($other)
+            ->post(route('payments.donations.submit', $donation), ['reference_number' => '1234567890123'])
+            ->assertForbidden();
 
-        $this->actingAs($other)->post(route('payments.donations.pay', $donation))->assertForbidden();
-        $this->actingAs($other)->get(route('payments.simulator.show', $payment))->assertForbidden();
-        $this->actingAs($other)->post(route('payments.simulator.complete', $payment), ['decision' => 'pay'])->assertForbidden();
-        $this->actingAs($other)->get(route('payments.return', $payment))->assertForbidden();
+        $this->assertDatabaseCount('payments', 0);
 
-        $this->assertSame('pending', $payment->fresh()->status);
+        auth()->logout();
+        $this->post(route('payments.donations.submit', $donation), ['reference_number' => '1234567890123'])
+            ->assertRedirect(route('login'));
     }
 
-    public function test_simulator_is_unavailable_when_paymongo_is_the_gateway(): void
+    public function test_the_qr_image_is_shown_when_it_exists_and_a_notice_when_it_does_not(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user)->post(route('donations.store'), ['amount' => '100', 'payment_method' => 'GCash']);
-        $payment = Payment::query()->sole();
+        $donation = Donation::factory()->create(['user_id' => $user->id, 'payment_method' => 'GCash', 'amount' => 100]);
 
-        config(['payments.gateway' => 'paymongo']);
-
-        $this->actingAs($user)->get(route('payments.simulator.show', $payment))->assertNotFound();
-    }
-
-    // ------------------------------------------------------------------
-    // PayMongo
-    // ------------------------------------------------------------------
-
-    public function test_paymongo_checkout_is_created_for_gcash_and_confirmed_on_return(): void
-    {
-        $this->usePayMongo();
-        Http::fake([
-            'api.paymongo.com/v1/checkout_sessions' => Http::response([
-                'data' => [
-                    'id' => 'cs_test_123',
-                    'attributes' => ['checkout_url' => 'https://checkout.paymongo.com/cs_test_123'],
-                ],
-            ]),
-            'api.paymongo.com/v1/checkout_sessions/cs_test_123' => Http::response([
-                'data' => [
-                    'id' => 'cs_test_123',
-                    'attributes' => [
-                        'status' => 'active',
-                        'payments' => [['id' => 'pay_abc', 'attributes' => ['status' => 'paid']]],
-                    ],
-                ],
-            ]),
-        ]);
-
-        $user = User::factory()->create(['mobile' => '9171234567']);
-
+        config(['payments.gcash.qr_image' => 'images/missing-qr-file.png']);
         $this->actingAs($user)
-            ->post(route('donations.store'), ['amount' => '500.50', 'payment_method' => 'GCash'])
-            ->assertRedirect('https://checkout.paymongo.com/cs_test_123');
+            ->get(route('payments.donations.pay', $donation))
+            ->assertSee('The GCash QR code is not available yet.')
+            ->assertDontSee('alt="Parish GCash QR code"', false);
 
-        Http::assertSent(function (HttpRequest $request) {
-            $attributes = $request['data']['attributes'] ?? [];
-
-            return $request->method() === 'POST'
-                && $request->url() === 'https://api.paymongo.com/v1/checkout_sessions'
-                && $request->hasHeader('Authorization', 'Basic '.base64_encode('sk_test_secret:'))
-                && $attributes['payment_method_types'] === ['gcash']
-                && $attributes['line_items'][0]['amount'] === 50050
-                && $attributes['line_items'][0]['currency'] === 'PHP'
-                && $attributes['billing']['phone'] === '09171234567'
-                && str_contains($attributes['success_url'], '/return?result=success');
-        });
-
-        $payment = Payment::query()->sole();
-        $this->assertSame('paymongo', $payment->gateway);
-        $this->assertSame('cs_test_123', $payment->checkout_id);
-
+        config(['payments.gcash.qr_image' => 'images/logo.png', 'payments.gcash.account_name' => 'Loboc Parish']);
         $this->actingAs($user)
-            ->get(route('payments.return', ['payment' => $payment, 'result' => 'success']))
-            ->assertRedirect(route('donations.index'));
-
-        $this->assertSame('paid', $payment->fresh()->status);
-        $this->assertSame('pay_abc', $payment->fresh()->gateway_payment_id);
-        $this->assertSame('Approved', Donation::query()->sole()->status);
+            ->get(route('payments.donations.pay', $donation))
+            ->assertSee('alt="Parish GCash QR code"', false)
+            ->assertSee('Loboc Parish')
+            ->assertDontSee('The GCash QR code is not available yet.');
     }
 
-    public function test_paymongo_outage_keeps_the_record_and_shows_a_retry_message(): void
+    public function test_paymongo_is_gone(): void
     {
-        $this->usePayMongo();
-        Http::fake(['api.paymongo.com/*' => Http::response(['errors' => [['detail' => 'Service unavailable']]], 503)]);
-
-        $user = User::factory()->create();
-
-        $this->actingAs($user)
-            ->post(route('donations.store'), ['amount' => '100', 'payment_method' => 'GCash'])
-            ->assertRedirect(route('donations.index'))
-            ->assertSessionHasErrors('payment');
-
-        $this->assertDatabaseCount('donations', 1);
-        $this->assertSame('failed', Payment::query()->sole()->status);
-    }
-
-    public function test_paymongo_webhook_marks_payment_paid_once_and_rejects_bad_signatures(): void
-    {
-        $this->usePayMongo();
-        Http::fake([
-            'api.paymongo.com/v1/checkout_sessions' => Http::response([
-                'data' => ['id' => 'cs_test_hook', 'attributes' => ['checkout_url' => 'https://checkout.paymongo.com/x']],
-            ]),
-        ]);
-
-        $user = User::factory()->create();
-        $this->actingAs($user)->post(route('donations.store'), ['amount' => '300', 'payment_method' => 'GCash']);
-        $payment = Payment::query()->sole();
-
-        $body = json_encode(['data' => ['attributes' => [
-            'type' => 'checkout_session.payment.paid',
-            'data' => [
-                'id' => 'cs_test_hook',
-                'attributes' => ['payments' => [['id' => 'pay_hook', 'attributes' => ['status' => 'paid']]]],
-            ],
-        ]]]);
-
-        $this->call('POST', route('payments.webhook'), [], [], [], [
-            'HTTP_PAYMONGO_SIGNATURE' => 't='.time().',te=wrong,li=',
-            'CONTENT_TYPE' => 'application/json',
-        ], $body)->assertUnauthorized();
-
-        $this->assertSame('pending', $payment->fresh()->status);
-
-        $timestamp = time();
-        $signature = 't='.$timestamp.',te='.hash_hmac('sha256', $timestamp.'.'.$body, 'whsk_test').',li=';
-
-        foreach ([1, 2] as $delivery) {
-            $this->call('POST', route('payments.webhook'), [], [], [], [
-                'HTTP_PAYMONGO_SIGNATURE' => $signature,
-                'CONTENT_TYPE' => 'application/json',
-            ], $body)->assertOk();
-        }
-
-        $this->assertSame('paid', $payment->fresh()->status);
-        $this->assertSame('pay_hook', $payment->fresh()->gateway_payment_id);
-        Notification::assertSentToTimes($user, ParishUpdate::class, 2); // donation.submitted + one payment.received
-    }
-
-    public function test_paymongo_signature_rejects_stale_timestamps(): void
-    {
-        $old = time() - 3600;
-        $header = 't='.$old.',te='.hash_hmac('sha256', $old.'.{}', 'secret');
-
-        $this->assertFalse(PayMongoGateway::signatureIsValid($header, '{}', 'secret'));
-        $this->assertFalse(PayMongoGateway::signatureIsValid('t=1,te=abc', '{}', null));
-    }
-
-    private function usePayMongo(): void
-    {
-        config([
-            'payments.gateway' => 'paymongo',
-            'payments.paymongo.secret_key' => 'sk_test_secret',
-            'payments.paymongo.webhook_secret' => 'whsk_test',
-            'payments.paymongo.base_url' => 'https://api.paymongo.com/v1',
-        ]);
-        $this->app->forgetInstance(PaymentGateway::class);
+        $this->assertFalse(class_exists(\App\Payments\Gateways\PayMongoGateway::class));
+        $this->assertNull(config('payments.paymongo'));
+        $this->post('/webhooks/paymongo', [])->assertNotFound();
     }
 
     private function openSchedule(): MassSchedule

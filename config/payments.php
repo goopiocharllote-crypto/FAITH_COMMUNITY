@@ -4,26 +4,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Online payment gateway
+    | GCash QR payments
     |--------------------------------------------------------------------------
     |
-    | "simulator" runs a local GCash checkout page so the full flow can be
-    | demonstrated without real money. "paymongo" sends parishioners to a real
-    | PayMongo GCash checkout (use test keys first: sk_test_...).
+    | Parishioners scan the parish GCash QR code, pay in the GCash app, then
+    | enter the 13-digit reference number from their receipt. The parish office
+    | checks that reference in its GCash account and confirms the payment.
+    |
+    | qr_image: path of the QR code picture inside the "public" folder.
+    | account_name / account_number: shown under the QR code (optional).
     |
     */
 
-    'gateway' => env('PAYMENT_GATEWAY', 'simulator'),
-
-    // GCash checkouts below this amount are rejected by PayMongo.
-    'minimum_online_amount' => (float) env('PAYMENT_MINIMUM_ONLINE_AMOUNT', 20),
-
     'currency' => 'PHP',
 
-    'paymongo' => [
-        'secret_key' => env('PAYMONGO_SECRET_KEY'),
-        'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET'),
-        'base_url' => env('PAYMONGO_BASE_URL', 'https://api.paymongo.com/v1'),
+    'gcash' => [
+        'qr_image' => env('GCASH_QR_IMAGE', 'images/gcash-qr.png'),
+        'account_name' => env('GCASH_ACCOUNT_NAME'),
+        'account_number' => env('GCASH_ACCOUNT_NUMBER'),
     ],
 
 ];

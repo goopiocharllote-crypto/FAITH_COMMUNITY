@@ -132,7 +132,7 @@ class ParishNotificationTest extends TestCase
 
         $this->assertStringContainsString($intention->referenceNumber(), $mail->subject);
         $this->assertStringContainsString('Hello Maria Clara', $html);
-        $this->assertStringContainsString('complete your ₱100.00 GCash offering', $html);
+        $this->assertStringContainsString('pay your ₱100.00 offering by scanning the GCash QR code', $html);
         $this->assertSame(route('mass-intentions.index'), $mail->actionUrl);
     }
 
