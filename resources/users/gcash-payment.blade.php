@@ -25,7 +25,7 @@
 
             <ol class="space-y-2 text-sm text-slate-700">
                 <li><span class="font-semibold text-slate-900">1.</span> Open your <strong>GCash</strong> app and tap <strong>Pay QR</strong>.</li>
-                <li><span class="font-semibold text-slate-900">2.</span> Scan the parish QR code below and pay exactly <strong>₱{{ number_format($payable->paymentAmount(), 2) }}</strong>.</li>
+                <li><span class="font-semibold text-slate-900">2.</span> Scan the parish QR code below. GCash does not fill in the amount, so <strong>type exactly ₱{{ number_format($payable->paymentAmount(), 2) }}</strong> in the Amount box.</li>
                 <li><span class="font-semibold text-slate-900">3.</span> Copy the <strong>13-digit reference number</strong> from your GCash receipt.</li>
                 <li><span class="font-semibold text-slate-900">4.</span> Enter it below. The parish office will confirm your payment.</li>
             </ol>
@@ -43,6 +43,19 @@
                     <p class="font-semibold text-slate-900">The GCash QR code is not available yet.</p>
                     <p class="mt-1 text-sm text-slate-600">Please contact the parish office, or choose to pay at the parish office instead.</p>
                 @endif
+            </div>
+
+            <div class="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-4 text-center">
+                <p class="text-xs font-semibold uppercase tracking-wide text-blue-800">Type this amount in GCash</p>
+                <p class="mt-1 text-3xl font-bold text-blue-900" data-amount-display>₱{{ number_format($payable->paymentAmount(), 2) }}</p>
+                <p class="mt-1 text-xs text-blue-800">The parish office will check that the amount matches before confirming.</p>
+                <button
+                    type="button"
+                    data-copy-amount="{{ number_format($payable->paymentAmount(), 2, '.', '') }}"
+                    class="mt-3 inline-flex items-center rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-800 transition hover:bg-blue-100 focus:outline-none focus:ring-4 focus:ring-blue-200"
+                >
+                    Copy amount
+                </button>
             </div>
 
             @if ($submittedReference)
@@ -90,3 +103,18 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    document.querySelectorAll('[data-copy-amount]').forEach((button) => {
+        button.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(button.dataset.copyAmount);
+                button.textContent = 'Copied! Paste it in GCash';
+            } catch (error) {
+                button.textContent = 'Type ' + button.dataset.copyAmount + ' in GCash';
+            }
+        });
+    });
+</script>
+@endpush

@@ -49,6 +49,9 @@ class OnlinePaymentTest extends TestCase
             ->assertSee('₱250.00')
             ->assertSee($donation->paymentReference())
             ->assertSee('Scan the parish QR code below')
+            ->assertSee('Type this amount in GCash')
+            ->assertSee('data-copy-amount="250.00"', false)
+            ->assertSee('GCash does not fill in the amount')
             ->assertSee('13-digit reference number')
             ->assertSee(route('payments.donations.submit', $donation));
 
@@ -75,7 +78,8 @@ class OnlinePaymentTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.donations'))
             ->assertSee('GCash ref. no.: 1234567890123')
-            ->assertSee('GCash reference submitted');
+            ->assertSee('GCash reference submitted')
+            ->assertSee('amount to match ₱250.00');
 
         $this->actingAs($admin)
             ->patch(route('admin.donations.approve', $donation))
@@ -214,6 +218,8 @@ class OnlinePaymentTest extends TestCase
             ->get(route('admin.mass-intentions'))
             ->assertSee('GCash reference no.:')
             ->assertSee('9988776655443')
+            ->assertSee('Amount to match:')
+            ->assertSee('₱150.00')
             ->assertSee('Confirm GCash payment')
             ->assertSee(route('admin.mass-intentions.offering-received', $intention));
 

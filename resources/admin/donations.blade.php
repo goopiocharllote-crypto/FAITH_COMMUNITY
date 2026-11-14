@@ -125,7 +125,7 @@
                             {{ $donation->paymentReference() }}
                             @php($gcashPayment = $donation->payments->whereIn('status', ['submitted', 'paid'])->last())
                             @if ($gcashPayment)
-                                <p class="mt-1 text-xs text-slate-500">GCash ref. no.: {{ $gcashPayment->gateway_payment_id }}</p>
+                                <p class="mt-1 text-xs text-slate-500">GCash ref. no.: {{ $gcashPayment->gateway_payment_id }} · amount to match ₱{{ number_format((float) $donation->amount, 2) }}</p>
                             @elseif ($donation->reference_number)
                                 <p class="mt-1 text-xs text-slate-500">{{ $donation->reference_number }}</p>
                             @endif

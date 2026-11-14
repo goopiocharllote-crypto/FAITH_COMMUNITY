@@ -102,6 +102,7 @@
                                         @php($gcashReference = $massIntention->isOnline() ? app(\App\Payments\GcashPayments::class)->submittedReference($massIntention) : null)
                                         @if ($gcashReference)
                                             <p><span class="font-semibold">GCash reference no.:</span> {{ $gcashReference }}</p>
+                                            <p><span class="font-semibold">Amount to match:</span> ₱{{ number_format((float) $massIntention->offering_amount, 2) }}</p>
                                         @endif
                                         @if ($massIntention->additional_message)
                                             <p class="whitespace-pre-line"><span class="font-semibold">Message:</span> {{ $massIntention->additional_message }}</p>
@@ -134,7 +135,7 @@
                                         <span class="text-slate-500">No offering</span>
                                     @elseif ($massIntention->isPaymentSubmitted())
                                         <span class="font-semibold text-sky-700">GCash reference submitted</span>
-                                        <span class="text-slate-500">· check it in the parish GCash, then confirm</span>
+                                        <span class="text-slate-500">· match the reference no. and amount in the parish GCash, then confirm</span>
                                     @else
                                         <span class="font-semibold text-amber-700">Offering unpaid</span>
                                         <span class="text-slate-500">· {{ $massIntention->isOnline() ? 'awaiting GCash' : 'pay at parish' }}</span>
