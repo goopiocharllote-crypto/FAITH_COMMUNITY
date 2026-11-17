@@ -29,6 +29,16 @@
     </div>
 @endif
 
+<div role="note" class="mb-6 flex gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    <x-heroicon-o-clock class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+    <p>
+        <span class="font-semibold">Please note:</span>
+        every Mass Intention request that stays <strong>Pending for more than {{ \App\Models\ParishSetting::get('pending_expiry_minutes') }} minutes</strong>
+        will be <strong>automatically rejected</strong>. If that happens, the Mass schedule becomes available again and you may submit a new request.
+        If you pay through GCash, upload your receipt right away.
+    </p>
+</div>
+
 <form
     id="mass-intention-form"
     method="POST"
@@ -849,7 +859,7 @@
                     </label>
                 </div>
 
-                <p class="mt-3 text-sm text-gray-500">A confirmation is sent to your email and mobile number, and again when the parish reviews your request.</p>
+                <p class="mt-3 text-sm text-gray-500">A confirmation is sent to your email and mobile number, and again when the parish reviews your request. Requests pending for more than {{ \App\Models\ParishSetting::get('pending_expiry_minutes') }} minutes are rejected automatically.</p>
             </fieldset>
 
 
