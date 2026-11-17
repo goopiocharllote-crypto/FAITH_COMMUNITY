@@ -76,10 +76,7 @@
                     </div>
 
                     <div>
-                        <div class="mb-2 flex items-center justify-between gap-3">
-                            <label for="password" class="block text-sm font-semibold text-slate-700">Password</label>
-                            <a href="{{ route('password.request') }}" class="text-sm font-semibold text-blue-700 transition hover:text-blue-900 hover:underline">Forgot password?</a>
-                        </div>
+                        <label for="password" class="mb-2 block text-sm font-semibold text-slate-700">Password</label>
                         <div class="relative">
                             <x-heroicon-o-lock-closed class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                             <input id="password" type="password" name="password" required autocomplete="current-password" placeholder="Enter your password" class="w-full rounded-xl border border-slate-300 bg-white py-3.5 pl-12 pr-12 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100">
@@ -87,6 +84,9 @@
                                 <span data-password-icon-show><x-heroicon-o-eye class="h-5 w-5" /></span>
                                 <span data-password-icon-hide class="hidden"><x-heroicon-o-eye-slash class="h-5 w-5" /></span>
                             </button>
+                        </div>
+                        <div class="mt-2 text-right">
+                            <a href="{{ route('password.request') }}" class="text-sm font-semibold text-blue-700 transition hover:text-blue-900 hover:underline">Forgot password?</a>
                         </div>
                     </div>
 
