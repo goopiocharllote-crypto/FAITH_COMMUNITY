@@ -251,7 +251,25 @@ class AdminPageController extends Controller
 
     public function settings(): View
     {
-        return $this->page('settings');
+        return $this->page('settings', ['settings' => \App\Models\ParishSetting::values()]);
+    }
+
+    public function updateSettings(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'parish_name' => ['required', 'string', 'max:120'],
+            'address' => ['required', 'string', 'max:255'],
+            'contact_number' => ['required', 'string', 'max:30', 'regex:/^[0-9+()\s-]{7,30}$/'],
+            'email' => ['required', 'string', 'email', 'max:120'],
+            'timezone' => ['required', Rule::in(['Asia/Manila', 'Asia/Tokyo', 'UTC'])],
+            'pending_expiry_minutes' => ['required', 'integer', 'min:1', 'max:1440'],
+        ], [
+            'contact_number.regex' => 'Enter a valid contact number (digits, spaces, +, - or parentheses).',
+        ]);
+
+        \App\Models\ParishSetting::put($data);
+
+        return redirect()->route('admin.settings')->with('settings_success', 'Parish settings saved successfully.');
     }
 
     public function updateMassIntention(MassIntention $massIntention, string $status): RedirectResponse

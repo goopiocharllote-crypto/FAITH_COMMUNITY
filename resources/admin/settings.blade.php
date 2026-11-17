@@ -81,7 +81,7 @@
                     type="text"
                     id="parish_name"
                     name="parish_name"
-                    value="{{ old('parish_name') }}"
+                    value="{{ old('parish_name', $settings['parish_name']) }}"
                     placeholder="Enter parish name"
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                     required
@@ -107,7 +107,7 @@
                     placeholder="Enter parish address"
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                     required
-                >{{ old('address') }}</textarea>
+                >{{ old('address', $settings['address']) }}</textarea>
 
             </div>
 
@@ -126,7 +126,7 @@
                     type="text"
                     id="contact_number"
                     name="contact_number"
-                    value="{{ old('contact_number') }}"
+                    value="{{ old('contact_number', $settings['contact_number']) }}"
                     placeholder="Enter contact number"
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                     required
@@ -149,7 +149,7 @@
                     type="email"
                     id="email"
                     name="email"
-                    value="{{ old('email') }}"
+                    value="{{ old('email', $settings['email']) }}"
                     placeholder="Enter parish email"
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                     required
@@ -181,26 +181,54 @@
 
                     <option
                         value="Asia/Manila"
-                        {{ old('timezone') == 'Asia/Manila' ? 'selected' : '' }}
+                        {{ old('timezone', $settings['timezone']) == 'Asia/Manila' ? 'selected' : '' }}
                     >
                         Asia/Manila (Philippines)
                     </option>
 
                     <option
                         value="Asia/Tokyo"
-                        {{ old('timezone') == 'Asia/Tokyo' ? 'selected' : '' }}
+                        {{ old('timezone', $settings['timezone']) == 'Asia/Tokyo' ? 'selected' : '' }}
                     >
                         Asia/Tokyo
                     </option>
 
                     <option
                         value="UTC"
-                        {{ old('timezone') == 'UTC' ? 'selected' : '' }}
+                        {{ old('timezone', $settings['timezone']) == 'UTC' ? 'selected' : '' }}
                     >
                         UTC
                     </option>
 
                 </select>
+
+            </div>
+
+
+            {{-- SYSTEM PREFERENCE: PENDING EXPIRY --}}
+            <div class="mb-8">
+
+                <label
+                    for="pending_expiry_minutes"
+                    class="block text-sm font-semibold text-gray-700 mb-2"
+                >
+                    Mass Intention auto-reject (minutes)
+                </label>
+
+                <input
+                    type="number"
+                    id="pending_expiry_minutes"
+                    name="pending_expiry_minutes"
+                    min="1"
+                    max="1440"
+                    value="{{ old('pending_expiry_minutes', $settings['pending_expiry_minutes']) }}"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                    required
+                >
+
+                <p class="mt-2 text-sm text-gray-500">
+                    Requests still pending after this many minutes are rejected automatically so the parishioner can book again.
+                </p>
 
             </div>
 

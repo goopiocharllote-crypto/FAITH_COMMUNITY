@@ -655,13 +655,17 @@
                     <h3 class="text-2xl font-bold text-[#102d50]">Get in Touch</h3>
                     <p class="mt-4 leading-relaxed text-gray-700">For parish concerns, service inquiries, and community information, you may contact the Parish Office through the details below.</p>
                     <div class="mt-6 space-y-4 text-gray-700">
-                        <p><strong>📍 Location:</strong> Loboc, Bohol, Philippines</p>
-                        <p><strong>✉ Email:</strong> parish@gmail.com</p>
-                        <p><strong>☎ Phone:</strong> +63 XXX XXX XXXX</p>
+                        <p><strong>📍 Location:</strong> {{ \App\Models\ParishSetting::get('address') }}</p>
+                        @if (\App\Models\ParishSetting::get('email') !== '')
+                            <p><strong>✉ Email:</strong> {{ \App\Models\ParishSetting::get('email') }}</p>
+                        @endif
+                        @if (\App\Models\ParishSetting::get('contact_number') !== '')
+                            <p><strong>☎ Phone:</strong> {{ \App\Models\ParishSetting::get('contact_number') }}</p>
+                        @endif
                     </div>
                 </div>
                 <div class="soft-card flex flex-col justify-center rounded-2xl bg-[#12375c] p-8 text-white">
-                    <p class="text-sm tracking-[0.25em] text-[#e6c65c]">PARISH OF SAINT PETER THE APOSTLE</p>
+                    <p class="text-sm uppercase tracking-[0.25em] text-[#e6c65c]">{{ \App\Models\ParishSetting::get('parish_name') }}</p>
                     <h3 class="mt-3 text-3xl font-bold">Faith. Service. Love.</h3>
                     <p class="mt-4 leading-relaxed text-white/80">We are here to serve our parish community through faith, prayer, and love.</p>
                 </div>

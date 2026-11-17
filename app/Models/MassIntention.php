@@ -29,7 +29,7 @@ class MassIntention extends Model implements Payable
         return static::query()
             ->where('status', 'Pending')
             ->whereNotIn('payment_status', ['Verifying', 'Paid'])
-            ->where('created_at', '<=', now()->subMinutes(self::PENDING_EXPIRY_MINUTES))
+            ->where('created_at', '<=', now()->subMinutes(max(1, (int) ParishSetting::get('pending_expiry_minutes') ?: self::PENDING_EXPIRY_MINUTES)))
             ->update(['status' => 'Rejected']);
     }
 

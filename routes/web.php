@@ -114,7 +114,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/admin/printlist', [AdminPageController::class, 'printlist'])->name('admin.printlist');
     Route::get('/admin/user-activity', [AdminPageController::class, 'userActivity'])->name('admin.user-activity');
     Route::get('/admin/settings', [AdminPageController::class, 'settings'])->name('admin.settings');
-    Route::put('/admin/settings', fn (AdminPageController $controller) => $controller->featureUnavailable('Parish settings'))
+    Route::put('/admin/settings', [AdminPageController::class, 'updateSettings'])
         ->name('admin.settings.update');
 });
 
