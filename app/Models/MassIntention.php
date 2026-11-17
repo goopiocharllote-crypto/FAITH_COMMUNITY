@@ -16,6 +16,23 @@ class MassIntention extends Model implements Payable
 
     public const METHOD_PARISH = 'Cash';
 
+    /** Minutes a request may wait for the parish to act on it before it is rejected automatically. */
+    public const PENDING_EXPIRY_MINUTES = 10;
+
+    /**
+     * Rejects every request still Pending after the expiry window, which frees the Mass
+     * schedule for the parishioner to book again. Requests whose GCash receipt was already
+     * submitted (or paid) are left for the parish to review.
+     */
+    public static function rejectExpired(): int
+    {
+        return static::query()
+            ->where('status', 'Pending')
+            ->whereNotIn('payment_status', ['Verifying', 'Paid'])
+            ->where('created_at', '<=', now()->subMinutes(self::PENDING_EXPIRY_MINUTES))
+            ->update(['status' => 'Rejected']);
+    }
+
     protected $fillable = [
         'schedule_id',
         'intention_type',

@@ -15,6 +15,7 @@ class MassIntentionController extends Controller
 {
     public function index(Request $request): View
     {
+        MassIntention::rejectExpired();
         $user = $request->user();
 
         return view()->file(resource_path('users/mass-intentions.blade.php'), [
@@ -34,6 +35,8 @@ class MassIntentionController extends Controller
     /** The parishioner's own list of Mass Intention requests, on its own page. */
     public function history(Request $request): View
     {
+        MassIntention::rejectExpired();
+
         return view()->file(resource_path('users/transactions.blade.php'), [
             'massIntentions' => $request->user()->massIntentions()
                 ->latest()
@@ -43,6 +46,8 @@ class MassIntentionController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        MassIntention::rejectExpired();
+
         $validated = $request->validate([
             'intention_type' => [
                 'required',
@@ -112,6 +117,9 @@ class MassIntentionController extends Controller
     public function confirmation(Request $request, MassIntention $massIntention): View
     {
         abort_unless($massIntention->user_id === $request->user()->id, 403);
+
+        MassIntention::rejectExpired();
+        $massIntention->refresh();
 
         return view()->file(resource_path('users/mass-intention-confirmation.blade.php'), [
             'massIntention' => $massIntention->load('schedule'),

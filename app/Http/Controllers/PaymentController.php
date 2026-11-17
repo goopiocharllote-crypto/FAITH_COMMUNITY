@@ -31,6 +31,9 @@ class PaymentController extends Controller
 
     public function showMassIntention(Request $request, MassIntention $massIntention): View|RedirectResponse
     {
+        MassIntention::rejectExpired();
+        $massIntention->refresh();
+
         return $this->show($request, $massIntention);
     }
 
@@ -41,6 +44,9 @@ class PaymentController extends Controller
 
     public function submitMassIntention(Request $request, MassIntention $massIntention): RedirectResponse
     {
+        MassIntention::rejectExpired();
+        $massIntention->refresh();
+
         return $this->submit($request, $massIntention);
     }
 

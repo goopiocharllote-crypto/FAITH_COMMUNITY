@@ -71,6 +71,8 @@ class AdminPageController extends Controller
 
     public function massIntentions(Request $request): View
     {
+        MassIntention::rejectExpired();
+
         $filters = $request->validate([
             'status' => ['nullable', Rule::in(['Pending', 'Approved', 'Rejected'])],
         ]);
@@ -254,6 +256,9 @@ class AdminPageController extends Controller
 
     public function updateMassIntention(MassIntention $massIntention, string $status): RedirectResponse
     {
+        MassIntention::rejectExpired();
+        $massIntention->refresh();
+
         if ($massIntention->status !== 'Pending' || ! in_array($status, ['Approved', 'Rejected'], true)) {
             return back()->withErrors([
                 'mass_intention' => 'This Mass Intention can no longer be updated.',

@@ -11,6 +11,7 @@ class UserDashboardController extends Controller
 {
     public function __invoke(Request $request): View
     {
+        \App\Models\MassIntention::rejectExpired();
         $user = $request->user();
         $massIntentions = $user->massIntentions();
 

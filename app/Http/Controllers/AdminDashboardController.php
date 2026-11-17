@@ -13,6 +13,7 @@ class AdminDashboardController extends Controller
 {
     public function __invoke(): View
     {
+        MassIntention::rejectExpired();
         $month = now();
 
         return view()->file(resource_path('admin/dashboard.blade.php'), [
