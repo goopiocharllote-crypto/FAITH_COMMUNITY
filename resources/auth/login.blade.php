@@ -44,6 +44,10 @@
                     <p class="mt-2 text-sm leading-6 text-slate-500">Enter your details below to continue.</p>
                 </div>
 
+                @if (session('status'))
+                    <div role="status" class="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('status') }}</div>
+                @endif
+
                 @if ($errors->any())
                     <div role="alert" class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
                         @foreach ($errors->all() as $error)

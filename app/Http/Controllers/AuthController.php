@@ -8,7 +8,11 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Http\Request;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\Rules\Password as PasswordRule;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -66,6 +70,56 @@ class AuthController extends Controller
         return redirect()->route(
             $role === User::ROLE_ADMINISTRATOR ? 'admin.dashboard' : 'dashboard'
         );
+    }
+
+    public function showForgotPassword(): View
+    {
+        return view()->file(resource_path('auth/forgot-password.blade.php'));
+    }
+
+    public function sendResetLink(Request $request): RedirectResponse
+    {
+        $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
+        $request->validate(['email' => ['required', 'string', 'email']]);
+
+        Password::sendResetLink($request->only('email'));
+
+        // Same response whether or not the account exists, so registered emails aren't revealed.
+        return back()->with('status', __('If an account exists for that email, we have sent a password reset link. Please check your inbox.'));
+    }
+
+    public function showResetPassword(Request $request, string $token): View
+    {
+        return view()->file(resource_path('auth/reset-password.blade.php'), [
+            'token' => $token,
+            'email' => $request->query('email'),
+        ]);
+    }
+
+    public function resetPassword(Request $request): RedirectResponse
+    {
+        $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
+
+        $request->validate([
+            'token' => ['required', 'string'],
+            'email' => ['required', 'string', 'email'],
+            'password' => ['required', 'string', 'confirmed', 'max:72', PasswordRule::min(8)->letters()->mixedCase()->numbers()],
+        ], ['password.confirmed' => __('The passwords do not match.')]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill(['password' => $password, 'remember_token' => Str::random(60)])->save();
+                event(new PasswordReset($user));
+            }
+        );
+
+        if ($status !== Password::PASSWORD_RESET) {
+            return back()->withInput($request->only('email'))
+                ->withErrors(['email' => __('This password reset link is invalid or has expired. Please request a new one.')]);
+        }
+
+        return redirect()->route('login')->with('status', __('Your password has been reset. You can now sign in.'));
     }
 
     public function register(RegisterRequest $request): RedirectResponse
