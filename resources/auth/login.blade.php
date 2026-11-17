@@ -78,9 +78,7 @@
                     <div>
                         <div class="mb-2 flex items-center justify-between gap-3">
                             <label for="password" class="block text-sm font-semibold text-slate-700">Password</label>
-                            @if (Route::has('password.request'))
-                                <a href="{{ route('password.request') }}" class="text-sm font-semibold text-blue-700 transition hover:text-blue-900 hover:underline">Forgot password?</a>
-                            @endif
+                            <a href="{{ route('password.request') }}" class="text-sm font-semibold text-blue-700 transition hover:text-blue-900 hover:underline">Forgot password?</a>
                         </div>
                         <div class="relative">
                             <x-heroicon-o-lock-closed class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
