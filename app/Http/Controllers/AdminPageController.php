@@ -248,7 +248,7 @@ class AdminPageController extends Controller
                 ->where('last_activity_at', '>=', now()->subMinutes(2))
                 ->orderByDesc('last_activity_at')
                 ->get(),
-            'users' => User::query()->orderBy('name')->get(),
+            'users' => User::query()->where('role', User::ROLE_PARISHIONER)->orderBy('name')->get(),
             'loginHistory' => \App\Models\LoginLog::query()
                 ->with('user')
                 ->latest('login_at')
