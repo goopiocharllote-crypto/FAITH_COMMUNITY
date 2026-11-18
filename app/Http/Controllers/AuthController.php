@@ -262,7 +262,8 @@ class AuthController extends Controller
                 ->where('user_id', $user->id)
                 ->whereNull('logout_at')
                 ->update(['logout_at' => now()]);
-            $user->forceFill(['last_activity_at' => null])->saveQuietly();
+            // Keep a real "last seen" time, dated just outside the 2-minute window so they show as Offline at once.
+            $user->forceFill(['last_activity_at' => now()->subMinutes(3)])->saveQuietly();
         }
 
         Auth::logout();
