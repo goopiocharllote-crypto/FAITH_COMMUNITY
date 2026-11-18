@@ -16,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // so generated URLs (CSS/JS assets, redirects) use https://.
         $middleware->trustProxies(at: '*');
 
+        $middleware->appendToGroup('web', \App\Http\Middleware\TrackUserActivity::class);
+
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
         ]);

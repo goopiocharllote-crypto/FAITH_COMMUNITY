@@ -243,9 +243,17 @@ class AdminPageController extends Controller
     public function userActivity(): View
     {
         return $this->page('user-activity', [
-            'activeUsers' => collect(),
+            'activeUsers' => User::query()
+                ->where('role', User::ROLE_PARISHIONER)
+                ->where('last_activity_at', '>=', now()->subMinutes(2))
+                ->orderByDesc('last_activity_at')
+                ->get(),
             'users' => User::query()->orderBy('name')->get(),
-            'loginHistory' => collect(),
+            'loginHistory' => \App\Models\LoginLog::query()
+                ->with('user')
+                ->latest('login_at')
+                ->limit(50)
+                ->get(),
         ]);
     }
 

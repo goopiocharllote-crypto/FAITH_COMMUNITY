@@ -67,6 +67,13 @@ class AuthController extends Controller
         RateLimiter::clear($throttleKey);
         $request->session()->regenerate();
 
+        $user = $request->user();
+        $user->forceFill(['last_login_at' => now(), 'last_activity_at' => now()])->saveQuietly();
+        $user->hasMany(\App\Models\LoginLog::class)->create([
+            'login_at' => now(),
+            'ip_address' => $request->ip(),
+        ]);
+
         return redirect()->route(
             $role === User::ROLE_ADMINISTRATOR ? 'admin.dashboard' : 'dashboard'
         );
@@ -146,6 +153,14 @@ class AuthController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        if ($user = $request->user()) {
+            \App\Models\LoginLog::query()
+                ->where('user_id', $user->id)
+                ->whereNull('logout_at')
+                ->update(['logout_at' => now()]);
+            $user->forceFill(['last_activity_at' => null])->saveQuietly();
+        }
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
