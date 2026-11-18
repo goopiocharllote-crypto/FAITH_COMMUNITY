@@ -32,7 +32,7 @@
                 <div class="mb-8">
                     <p class="mb-2 text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">Account recovery</p>
                     <h2 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Forgot your password?</h2>
-                    <p class="mt-2 text-sm leading-6 text-slate-500">Enter your email and we will send you a link to reset it.</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">Enter your email to get a reset link, or your mobile number to get a 6-digit code by text. No working email? Use your mobile number.</p>
                 </div>
 
                 @if (session('status'))
@@ -50,10 +50,10 @@
                 <form method="POST" action="{{ route('password.email') }}" class="space-y-5">
                     @csrf
                     <div>
-                        <label for="email" class="mb-2 block text-sm font-semibold text-slate-700">Email address</label>
-                        <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="email" placeholder="you@example.com" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100">
+                        <label for="login" class="mb-2 block text-sm font-semibold text-slate-700">Email address or mobile number</label>
+                        <input id="login" type="text" name="login" value="{{ old('login') }}" required autofocus autocomplete="username" placeholder="you@example.com or 09171234567" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100">
                     </div>
-                    <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 py-3.5 font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200">Send reset link</button>
+                    <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 py-3.5 font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200">Continue</button>
                 </form>
 
                 <p class="mt-7 text-center text-sm text-slate-600">
