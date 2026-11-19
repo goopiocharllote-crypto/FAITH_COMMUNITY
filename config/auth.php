@@ -112,4 +112,17 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Email verification at sign-up
+    |--------------------------------------------------------------------------
+    |
+    | New sign-ups must confirm a 6-digit code emailed to them before the account
+    | is created. Set EMAIL_VERIFICATION=false to turn it off (for example if the
+    | mail service is down).
+    |
+    */
+
+    'verify_registration_email' => (bool) env('EMAIL_VERIFICATION', true),
+
 ];

@@ -42,6 +42,15 @@ Route::redirect('/parish-contact', '/#contact');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+    Route::get('/verify-email', [AuthController::class, 'showVerifyEmail'])->name('verification.notice');
+    Route::post('/verify-email', [AuthController::class, 'verifyEmail'])
+        ->middleware('throttle:10,1')
+        ->name('verification.verify');
+    Route::post('/verify-email/resend', [AuthController::class, 'resendEmailCode'])
+        ->middleware('throttle:5,1')
+        ->name('verification.resend');
+    Route::get('/auth/google', [AuthController::class, 'redirectToGoogle'])->name('auth.google');
+    Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
     Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])
         ->middleware('throttle:5,1')

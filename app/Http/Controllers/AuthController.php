@@ -9,7 +9,15 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Auth\Events\PasswordReset;
+use App\Models\LoginLog;
+use App\Notifications\EmailVerificationCode;
 use App\Notifications\PasswordResetCode;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
+use Laravel\Socialite\Facades\Socialite;
+use Throwable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -237,22 +245,206 @@ class AuthController extends Controller
     {
         $validated = $request->validated();
 
-        $user = User::create([
+        if (! config('auth.verify_registration_email')) {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'mobile' => $validated['mobile'],
+                'password' => $validated['password'],
+                'role' => User::ROLE_PARISHIONER,
+            ]);
+
+            return $this->finishRegistration($request, $user);
+        }
+
+        // The account is only created once the emailed code is confirmed, so a made-up email can't get in.
+        $payload = Crypt::encryptString(json_encode([
             'name' => $validated['name'],
-            'email' => $validated['email'],
             'mobile' => $validated['mobile'],
-            'password' => $validated['password'],
-            'role' => User::ROLE_PARISHIONER,
+            'password' => Hash::make($validated['password']),
+        ]));
+
+        if (! $this->sendEmailCode($validated['email'], $payload)) {
+            return back()->withInput($request->only('name', 'email', 'mobile'))->withErrors([
+                'email' => __('We could not send the verification email right now. Please check the address and try again.'),
+            ]);
+        }
+
+        return redirect()->route('verification.notice', ['email' => $validated['email']])
+            ->with('status', __('We emailed a 6-digit code to :email. Enter it below to finish creating your account.', ['email' => $validated['email']]));
+    }
+
+    private const EMAIL_CODE_MINUTES = 10;
+
+    /** Creates a fresh code for the pending sign-up and emails it. Returns false if the email could not be sent. */
+    private function sendEmailCode(string $email, string $payload): bool
+    {
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        DB::table('email_verifications')->updateOrInsert(['email' => $email], [
+            'payload' => $payload,
+            'code_hash' => Hash::make($code),
+            'attempts' => 0,
+            'expires_at' => now()->addMinutes(self::EMAIL_CODE_MINUTES),
+            'created_at' => now(),
         ]);
 
+        try {
+            Notification::route('mail', $email)->notify(new EmailVerificationCode($code, self::EMAIL_CODE_MINUTES));
+        } catch (Throwable $exception) {
+            Log::error('Verification email failed', ['email' => $email, 'error' => $exception->getMessage()]);
+            DB::table('email_verifications')->where('email', $email)->delete();
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function finishRegistration(Request $request, User $user): RedirectResponse
+    {
         event(new Registered($user));
-        Auth::login($user);
-        $request->session()->regenerate();
+        $this->signIn($request, $user);
 
         return redirect()
             ->intended(route('dashboard'))
             ->with('newUser', true)
             ->with('status', __('Your account has been created successfully. You are now signed in.'));
+    }
+
+    /** Logs the user in and records the login for the User Activity page. */
+    private function signIn(Request $request, User $user): void
+    {
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        $user->forceFill(['last_login_at' => now(), 'last_activity_at' => now()])->saveQuietly();
+        $user->hasMany(LoginLog::class)->create(['login_at' => now(), 'ip_address' => $request->ip()]);
+    }
+
+    public function showVerifyEmail(Request $request): View
+    {
+        return view()->file(resource_path('auth/verify-email.blade.php'), [
+            'email' => $request->query('email'),
+        ]);
+    }
+
+    public function verifyEmail(Request $request): RedirectResponse
+    {
+        $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
+        $request->validate([
+            'email' => ['required', 'email'],
+            'code' => ['required', 'digits:6'],
+        ], ['code.digits' => __('The code is 6 digits.')]);
+
+        $invalid = fn () => back()->withInput($request->only('email'))
+            ->withErrors(['code' => __('That code is invalid or has expired. Please request a new one.')]);
+
+        $row = DB::table('email_verifications')->where('email', $request->input('email'))->first();
+
+        if (! $row || now()->greaterThan(Carbon::parse($row->expires_at)) || $row->attempts >= 5) {
+            return $invalid();
+        }
+
+        if (! Hash::check($request->input('code'), $row->code_hash)) {
+            DB::table('email_verifications')->where('email', $row->email)->increment('attempts');
+
+            return $invalid();
+        }
+
+        $data = json_decode(Crypt::decryptString($row->payload), true);
+
+        // Someone may have taken this email or number while the code was pending.
+        if (User::query()->where('email', $row->email)->orWhere('mobile', $data['mobile'])->exists()) {
+            DB::table('email_verifications')->where('email', $row->email)->delete();
+
+            return redirect()->route('register')->withErrors([
+                'email' => __('This email or mobile number is already registered. Please sign in instead.'),
+            ]);
+        }
+
+        $user = new User([
+            'name' => $data['name'],
+            'email' => $row->email,
+            'mobile' => $data['mobile'],
+            'password' => $data['password'],
+            'role' => User::ROLE_PARISHIONER,
+        ]);
+        $user->email_verified_at = now();
+        $user->save();
+
+        DB::table('email_verifications')->where('email', $row->email)->delete();
+
+        return $this->finishRegistration($request, $user);
+    }
+
+    public function resendEmailCode(Request $request): RedirectResponse
+    {
+        $email = mb_strtolower(trim((string) $request->input('email')));
+        $row = DB::table('email_verifications')->where('email', $email)->first();
+
+        // One email per minute; the reply is the same either way.
+        if ($row && now()->subSeconds(60)->gte(Carbon::parse($row->created_at))) {
+            $this->sendEmailCode($email, $row->payload);
+        }
+
+        return back()->with('status', __('If a sign-up is waiting for :email, we sent a new code. Please check your inbox.', ['email' => $email]));
+    }
+
+    public function redirectToGoogle(): RedirectResponse
+    {
+        abort_unless(config('services.google.client_id'), 404);
+
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function handleGoogleCallback(Request $request): RedirectResponse
+    {
+        abort_unless(config('services.google.client_id'), 404);
+
+        $fail = fn (string $message) => redirect()->route('login')->withErrors(['email' => $message]);
+
+        try {
+            $google = Socialite::driver('google')->user();
+        } catch (Throwable) {
+            return $fail(__('Google sign-in was cancelled or failed. Please try again.'));
+        }
+
+        $email = mb_strtolower((string) $google->getEmail());
+
+        // Only trust an email address that Google itself has verified.
+        if ($email === '' || ! filter_var($google->user['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            return $fail(__('Your Google account does not have a verified email address.'));
+        }
+
+        $user = User::query()->where('email', $email)->first();
+
+        if ($user && $user->role !== User::ROLE_PARISHIONER) {
+            return $fail(__('Administrators must sign in with their email and password.'));
+        }
+
+        $isNew = $user === null;
+
+        if ($isNew) {
+            $user = new User([
+                'name' => $google->getName() ?: Str::before($email, '@'),
+                'email' => $email,
+                'password' => Str::random(40),
+                'role' => User::ROLE_PARISHIONER,
+            ]);
+            $user->email_verified_at = now();
+            $user->save();
+        } elseif (! $user->email_verified_at) {
+            $user->forceFill(['email_verified_at' => now()])->saveQuietly();
+        }
+
+        $this->signIn($request, $user);
+
+        $redirect = redirect()->intended(route('dashboard'));
+
+        return $isNew
+            ? $redirect->with('newUser', true)->with('status', __('Your account has been created with Google. You are now signed in.'))
+            : $redirect;
     }
 
     public function logout(Request $request): RedirectResponse

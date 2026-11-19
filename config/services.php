@@ -14,6 +14,16 @@ return [
     |
     */
 
+    /*
+    | "Continue with Google". Create an OAuth client at https://console.cloud.google.com/apis/credentials
+    | and add <APP_URL>/auth/google/callback as an authorised redirect URI.
+    */
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', rtrim((string) env('APP_URL', 'http://localhost'), '/').'/auth/google/callback'),
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
