@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Administrator Dashboard | Faith Community Platform</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}">
 </head>
 <body class="min-h-screen bg-slate-100 px-4 py-10">
     <main class="mx-auto max-w-4xl rounded-2xl bg-white p-8 shadow-xl sm:p-12">

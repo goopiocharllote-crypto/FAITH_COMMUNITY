@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Register | Faith Community Platform</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}">
 </head>
 <body class="min-h-screen bg-slate-100 px-3 py-4 sm:px-6 sm:py-8 lg:py-12">
     <main class="mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl shadow-blue-950/10 sm:rounded-3xl lg:min-h-[min(820px,calc(100vh-4rem))] lg:flex-row">
