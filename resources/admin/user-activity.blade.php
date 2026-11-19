@@ -232,6 +232,10 @@
                     </th>
 
                     <th class="text-left px-6 py-4">
+                        Mobile Number
+                    </th>
+
+                    <th class="text-left px-6 py-4">
                         Last Login
                     </th>
 
@@ -268,6 +272,11 @@
 
                         <td class="px-6 py-4">
                             {{ $user->email }}
+                        </td>
+
+                        {{-- Stored as 9XXXXXXXXX at sign-up; Google sign-ups have none. --}}
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {{ $user->mobile ? '0'.$user->mobile : 'Not provided' }}
                         </td>
 
                         <td class="px-6 py-4">
@@ -335,7 +344,7 @@
                     <tr>
 
                         <td
-                            colspan="5"
+                            colspan="6"
                             class="
                                 text-center
                                 py-12
