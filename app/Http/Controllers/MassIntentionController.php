@@ -63,10 +63,11 @@ class MassIntentionController extends Controller
             ],
             'mobile' => ['required', 'string', 'regex:/^9[0-9]{9}$/'],
             'offering_amount' => ['required', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'],
-            'payment_method' => ['nullable', Rule::in([MassIntention::METHOD_ONLINE, MassIntention::METHOD_PARISH])],
+            // GCash is the only way to give a Mass Intention offering.
+            'payment_method' => ['nullable', Rule::in([MassIntention::METHOD_ONLINE])],
         ]);
 
-        $validated['payment_method'] ??= MassIntention::METHOD_PARISH;
+        $validated['payment_method'] = MassIntention::METHOD_ONLINE;
 
         $schedule = MassSchedule::query()->findOrFail($validated['schedule_id']);
 

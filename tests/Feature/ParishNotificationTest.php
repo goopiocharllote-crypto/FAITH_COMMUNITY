@@ -38,7 +38,7 @@ class ParishNotificationTest extends TestCase
             'schedule_id' => $schedule->id,
             'mobile' => '9171234567',
             'offering_amount' => '100',
-            'payment_method' => 'Cash',
+            'payment_method' => 'GCash',
         ]);
         $intention = MassIntention::query()->sole();
 
@@ -46,7 +46,7 @@ class ParishNotificationTest extends TestCase
             return $n->kind === 'mass_intention.submitted'
                 && $channels === ['mail', SmsChannel::class]
                 && str_contains($n->subject, $intention->referenceNumber())
-                && collect($n->lines)->contains(fn ($line) => str_contains($line, 'bring your ₱100.00 offering to the parish office'));
+                && collect($n->lines)->contains(fn ($line) => str_contains($line, 'pay your ₱100.00 offering by scanning the GCash QR code'));
         });
 
         $this->actingAs($admin)->patch(route('admin.mass-intentions.approve', $intention));

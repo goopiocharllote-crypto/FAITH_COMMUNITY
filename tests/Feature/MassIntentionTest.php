@@ -34,8 +34,8 @@ class MassIntentionTest extends TestCase
             'offering_amount' => '100.00',
         ]);
 
-        $response->assertRedirect(route('mass-intentions.confirmation', MassIntention::query()->sole()))
-            ->assertSessionHas('status', 'Your Mass Intention request has been submitted.');
+        $response->assertRedirect(route('payments.mass-intentions.pay', MassIntention::query()->sole()))
+            ->assertSessionHas('status', 'Your Mass Intention request has been submitted. Scan the GCash QR code below to pay your offering.');
 
         $this->assertDatabaseHas('mass_intentions', [
             'user_id' => $user->id,
@@ -152,8 +152,8 @@ class MassIntentionTest extends TestCase
                 'mobile' => '9171234567',
                 'offering_amount' => '100.00',
             ])
-            ->assertRedirect(route('mass-intentions.confirmation', MassIntention::query()->sole()))
-            ->assertSessionHas('status', 'Your Mass Intention request has been submitted.');
+            ->assertRedirect(route('payments.mass-intentions.pay', MassIntention::query()->sole()))
+            ->assertSessionHas('status', 'Your Mass Intention request has been submitted. Scan the GCash QR code below to pay your offering.');
 
         $this->assertDatabaseHas('mass_intentions', [
             'schedule_id' => $schedule->id,
@@ -211,8 +211,8 @@ class MassIntentionTest extends TestCase
                 'mobile' => '9171234567',
                 'offering_amount' => '150.00',
             ])
-            ->assertRedirect(route('mass-intentions.confirmation', MassIntention::query()->sole()))
-            ->assertSessionHas('status', 'Your Mass Intention request has been submitted.');
+            ->assertRedirect(route('payments.mass-intentions.pay', MassIntention::query()->sole()))
+            ->assertSessionHas('status', 'Your Mass Intention request has been submitted. Scan the GCash QR code below to pay your offering.');
 
         $massIntention = MassIntention::query()->sole();
 
@@ -244,7 +244,7 @@ class MassIntentionTest extends TestCase
                 'mobile' => '9171234567',
                 'offering_amount' => '100.00',
             ])
-            ->assertRedirect(route('mass-intentions.confirmation', MassIntention::query()->sole()));
+            ->assertRedirect(route('payments.mass-intentions.pay', MassIntention::query()->sole()));
 
         $massIntention = MassIntention::query()->sole();
 
@@ -405,7 +405,7 @@ class MassIntentionTest extends TestCase
             ->assertSee('Thanksgiving')
             ->assertSee($schedule->mass_date->format('l, F j, Y'))
             ->assertSee('100.00')
-            ->assertSee('Pay at parish office');
+            ->assertSee('Awaiting GCash payment');
 
         $this->get(route('mass-intentions.history'))
             ->assertSee(route('mass-intentions.confirmation', $massIntention))

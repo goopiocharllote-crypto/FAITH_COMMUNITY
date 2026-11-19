@@ -842,19 +842,12 @@
                     <span class="text-red-500" data-required-for="payment_method">*</span>
                 </legend>
 
-                <div class="grid gap-3 sm:grid-cols-2">
+                <div class="grid gap-3">
                     <label class="flex cursor-pointer gap-3 rounded-xl border border-gray-300 p-4 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 has-[:checked]:ring-2 has-[:checked]:ring-blue-100">
                         <input type="radio" name="payment_method" value="GCash" required class="mt-1 h-4 w-4 accent-blue-700" @checked(old('payment_method', 'GCash') === 'GCash')>
                         <span>
                             <span class="block font-semibold text-gray-900">Pay online · GCash</span>
                             <span class="mt-0.5 block text-sm text-gray-600">After submitting, scan the parish GCash QR code, pay, then upload your GCash receipt.</span>
-                        </span>
-                    </label>
-                    <label class="flex cursor-pointer gap-3 rounded-xl border border-gray-300 p-4 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 has-[:checked]:ring-2 has-[:checked]:ring-blue-100">
-                        <input type="radio" name="payment_method" value="Cash" required class="mt-1 h-4 w-4 accent-blue-700" @checked(old('payment_method') === 'Cash')>
-                        <span>
-                            <span class="block font-semibold text-gray-900">Pay at the parish office</span>
-                            <span class="mt-0.5 block text-sm text-gray-600">Bring your offering in person before the Mass.</span>
                         </span>
                     </label>
                 </div>
