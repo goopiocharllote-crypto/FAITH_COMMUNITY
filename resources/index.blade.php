@@ -63,7 +63,7 @@
                     <div class="leading-tight">
 
                         <h1 class="font-bold text-lg md:text-xl tracking-wide text-[#102d50]">
-                            CEC COMMUNITY
+                            FAITH COMMUNITY
                         </h1>
 
                         <p class="font-bold text-lg md:text-xl tracking-wide text-[#102d50]">
@@ -224,7 +224,7 @@
                             text-[#102d50]
                         "
                     >
-                        CEC COMMUNITY
+                        FAITHCOMMUNITY
                         <br>
                         LOBOC PARISH
                     </h2>
