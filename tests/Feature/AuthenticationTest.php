@@ -261,13 +261,13 @@ class AuthenticationTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_administrators_cannot_open_the_parishioner_dashboard(): void
+    public function test_administrators_opening_the_parishioner_dashboard_are_redirected(): void
     {
         $this->actingAs(User::factory()->create([
             'role' => User::ROLE_ADMINISTRATOR,
         ]))
             ->get(route('dashboard'))
-            ->assertForbidden();
+            ->assertRedirect(route('admin.dashboard'));
     }
 
     public function test_admin_dashboard_displays_database_metrics_and_recent_requests(): void
