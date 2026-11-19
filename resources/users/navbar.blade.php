@@ -1,4 +1,4 @@
-<aside class="print:hidden bg-slate-800 text-white md:flex md:min-h-screen md:w-64 md:flex-col">
+<aside class="print:hidden sticky top-0 z-30 bg-slate-800 text-white md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col">
     <div class="flex items-center justify-between gap-3 px-5 py-4">
         <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3">
             <img src="{{ asset('images/logo.png') }}" alt="" class="h-11 w-11 shrink-0 rounded-lg bg-white object-contain p-1">
@@ -25,7 +25,7 @@
         </button>
     </div>
 
-    <nav id="user-navigation" data-mobile-menu data-mobile-menu-flex class="hidden flex-col gap-1 px-3 pb-3 md:flex md:flex-1 md:overflow-visible md:py-4" aria-label="User navigation">
+    <nav id="user-navigation" data-mobile-menu data-mobile-menu-flex class="hidden max-h-[calc(100svh-4.5rem)] flex-col gap-1 overflow-y-auto px-3 pb-3 md:flex md:max-h-none md:flex-1 md:py-4" aria-label="User navigation">
         <a href="{{ route('dashboard') }}" @class(['whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/10', 'bg-white/15' => request()->routeIs('dashboard')])>
             Home
         </a>

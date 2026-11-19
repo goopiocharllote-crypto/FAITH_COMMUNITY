@@ -258,6 +258,18 @@
     </section>
 
 
+    <!-- LINK TO TRANSACTIONS -->
+    <div class="mt-6 flex flex-col gap-3 rounded-xl border border-gray-200 bg-white px-5 py-4 sm:mt-7 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-w-0">
+            <h3 class="text-lg font-bold">Already requested a Mass?</h3>
+            <p class="mt-1 text-sm text-gray-600">See your reference numbers, status and GCash payments on your own page.</p>
+        </div>
+        <a href="{{ route('mass-intentions.history') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-blue-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200">
+            View my transactions
+        </a>
+    </div>
+
+
     <!-- MAIN DASHBOARD CONTENT -->
     <section
         class="grid grid-cols-1 gap-5 sm:gap-7 lg:grid-cols-2 mt-6 sm:mt-7"

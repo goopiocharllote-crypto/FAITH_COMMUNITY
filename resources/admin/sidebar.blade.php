@@ -1,4 +1,4 @@
-<aside class="bg-slate-950 text-white md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col">
+<aside class="sticky top-0 z-30 bg-slate-950 text-white md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col">
     <div class="border-b border-white/10 px-5 py-5">
         <a href="{{ route('admin.dashboard') }}" class="text-lg font-bold tracking-tight">
             Faith Community
