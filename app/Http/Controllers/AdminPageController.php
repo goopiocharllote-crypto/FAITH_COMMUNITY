@@ -14,6 +14,8 @@ use App\Payments\GcashPayments;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -255,6 +257,142 @@ class AdminPageController extends Controller
                 ->limit(50)
                 ->get(),
         ]);
+    }
+
+    public function accounts(Request $request): View
+    {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', Rule::in(['active', 'deactivated'])],
+        ]);
+        $search = trim((string) ($filters['search'] ?? ''));
+        $status = $filters['status'] ?? null;
+
+        $users = User::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%';
+                $mobile = ltrim(preg_replace('/\D/', '', $search), '0');
+
+                $query->where(function ($query) use ($like, $mobile) {
+                    $query->where('name', 'like', $like)
+                        ->orWhere('email', 'like', $like);
+
+                    if ($mobile !== '') {
+                        $query->orWhere('mobile', 'like', '%'.$mobile.'%');
+                    }
+                });
+            })
+            ->when($status === 'active', fn ($query) => $query->whereNull('deactivated_at'))
+            ->when($status === 'deactivated', fn ($query) => $query->whereNotNull('deactivated_at'))
+            ->withCount(['massIntentions', 'prayerRequests', 'donations'])
+            // Administrators first, then parishioners by newest sign-up.
+            ->orderByRaw('CASE WHEN role = ? THEN 0 ELSE 1 END', [User::ROLE_ADMINISTRATOR])
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        return $this->page('accounts', [
+            'users' => $users,
+            'search' => $search,
+            'activeStatus' => $status,
+            'counts' => [
+                'all' => User::query()->count(),
+                'active' => User::query()->whereNull('deactivated_at')->count(),
+                'deactivated' => User::query()->whereNotNull('deactivated_at')->count(),
+            ],
+        ]);
+    }
+
+    public function deactivateAccount(Request $request, User $user): RedirectResponse
+    {
+        if ($blocked = $this->protectedAccount($request, $user)) {
+            return $blocked;
+        }
+
+        $user->forceFill(['deactivated_at' => now(), 'remember_token' => Str::random(60)])->save();
+
+        return back()->with('accounts_success', "{$user->name}'s account has been deactivated. They have been signed out and can no longer log in.");
+    }
+
+    public function reactivateAccount(Request $request, User $user): RedirectResponse
+    {
+        if ($blocked = $this->protectedAccount($request, $user)) {
+            return $blocked;
+        }
+
+        $user->forceFill(['deactivated_at' => null])->save();
+
+        return back()->with('accounts_success', "{$user->name}'s account has been reactivated. They can log in again.");
+    }
+
+    public function confirmDeleteAccount(Request $request, User $user): View|RedirectResponse
+    {
+        if ($blocked = $this->protectedAccount($request, $user)) {
+            return $blocked;
+        }
+
+        $user->loadCount(['massIntentions', 'prayerRequests', 'donations']);
+
+        return $this->page('accounts-delete', ['account' => $user]);
+    }
+
+    /**
+     * Deleting keeps the parish records: the user row is soft deleted, so the
+     * Mass Intentions, prayer requests, donations and GCash payments that point to it
+     * (with cascading foreign keys) are left in place and still show the parishioner's name.
+     * Their sign-in details and contact info are removed, which frees the email and
+     * mobile number to be registered again and stops any further notifications.
+     */
+    public function destroyAccount(Request $request, User $user): RedirectResponse
+    {
+        if ($blocked = $this->protectedAccount($request, $user)) {
+            return $blocked;
+        }
+
+        $request->validate([
+            'confirm_name' => ['required', 'string', function ($attribute, $value, $fail) use ($user) {
+                if (mb_strtolower(trim($value)) !== mb_strtolower(trim($user->name))) {
+                    $fail(__('Type the account name exactly as shown to confirm.'));
+                }
+            }],
+        ]);
+
+        $name = $user->name;
+
+        DB::transaction(function () use ($user) {
+            if ($user->mobile) {
+                DB::table('password_reset_codes')->where('mobile', $user->mobile)->delete();
+            }
+            DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+            \App\Models\LoginLog::query()->where('user_id', $user->id)->whereNull('logout_at')->update(['logout_at' => now()]);
+
+            $user->forceFill([
+                'email' => "deleted-user-{$user->id}@deleted.invalid",
+                'mobile' => null,
+                'password' => Str::random(60),
+                'remember_token' => Str::random(60),
+                'deactivated_at' => $user->deactivated_at ?? now(),
+            ])->save();
+
+            $user->delete();
+        });
+
+        return redirect()->route('admin.accounts')
+            ->with('accounts_success', "{$name}'s account has been deleted. Their Mass Intentions, prayer requests and donations remain in the parish records.");
+    }
+
+    /** Administrators cannot deactivate or delete themselves or another administrator. */
+    private function protectedAccount(Request $request, User $user): ?RedirectResponse
+    {
+        if ($user->is($request->user())) {
+            return redirect()->route('admin.accounts')->withErrors(['accounts' => __('You cannot change your own account here.')]);
+        }
+
+        if ($user->isAdministrator()) {
+            return redirect()->route('admin.accounts')->withErrors(['accounts' => __('Administrator accounts cannot be deactivated or deleted.')]);
+        }
+
+        return null;
     }
 
     public function settings(): View

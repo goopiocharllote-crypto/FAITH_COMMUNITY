@@ -76,6 +76,16 @@ class AuthController extends Controller
         }
 
         RateLimiter::clear($throttleKey);
+
+        // Only reveal that an account is deactivated once the right password was given.
+        if ($request->user()->isDeactivated()) {
+            Auth::guard('web')->logout();
+
+            throw ValidationException::withMessages([
+                'email' => __(User::DEACTIVATED_MESSAGE),
+            ]);
+        }
+
         $request->session()->regenerate();
 
         $user = $request->user();
@@ -111,7 +121,9 @@ class AuthController extends Controller
                 throw ValidationException::withMessages(['login' => __('Enter a valid email address or mobile number.')]);
             }
 
-            Password::sendResetLink(['email' => $email]);
+            if (! User::query()->where('email', $email)->whereNotNull('deactivated_at')->exists()) {
+                Password::sendResetLink(['email' => $email]);
+            }
 
             // Same response whether or not the account exists, so registered emails aren't revealed.
             return back()->with('status', __('If an account exists for that email, we have sent a password reset link. Please check your inbox.'));
@@ -136,7 +148,7 @@ class AuthController extends Controller
     {
         $user = User::query()->where('mobile', $mobile)->first();
 
-        if (! $user) {
+        if (! $user || $user->isDeactivated()) {
             return;
         }
 
@@ -200,6 +212,10 @@ class AuthController extends Controller
             return $invalid();
         }
 
+        if ($user->isDeactivated()) {
+            return redirect()->route('login')->withErrors(['email' => __(User::DEACTIVATED_MESSAGE)]);
+        }
+
         $user->forceFill(['password' => $request->input('password'), 'remember_token' => Str::random(60)])->save();
         DB::table('password_reset_codes')->where('mobile', $row->mobile)->delete();
         event(new PasswordReset($user));
@@ -224,6 +240,10 @@ class AuthController extends Controller
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string', 'confirmed', 'max:72', PasswordRule::min(8)->letters()->mixedCase()->numbers()],
         ], ['password.confirmed' => __('The passwords do not match.')]);
+
+        if (User::query()->where('email', $request->input('email'))->whereNotNull('deactivated_at')->exists()) {
+            return redirect()->route('login')->withErrors(['email' => __(User::DEACTIVATED_MESSAGE)]);
+        }
 
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
@@ -421,6 +441,10 @@ class AuthController extends Controller
 
         if ($user && $user->role !== User::ROLE_PARISHIONER) {
             return $fail(__('Administrators must sign in with their email and password.'));
+        }
+
+        if ($user?->isDeactivated()) {
+            return $fail(__(User::DEACTIVATED_MESSAGE));
         }
 
         $isNew = $user === null;

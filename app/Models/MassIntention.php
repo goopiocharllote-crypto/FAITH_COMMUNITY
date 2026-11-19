@@ -55,7 +55,7 @@ class MassIntention extends Model implements Payable
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function schedule(): BelongsTo

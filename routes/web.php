@@ -126,6 +126,15 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/admin/reports', [AdminPageController::class, 'reports'])->name('admin.reports');
     Route::get('/admin/printlist', [AdminPageController::class, 'printlist'])->name('admin.printlist');
     Route::get('/admin/user-activity', [AdminPageController::class, 'userActivity'])->name('admin.user-activity');
+    Route::get('/admin/accounts', [AdminPageController::class, 'accounts'])->name('admin.accounts');
+    Route::patch('/admin/accounts/{user}/deactivate', [AdminPageController::class, 'deactivateAccount'])
+        ->name('admin.accounts.deactivate');
+    Route::patch('/admin/accounts/{user}/reactivate', [AdminPageController::class, 'reactivateAccount'])
+        ->name('admin.accounts.reactivate');
+    Route::get('/admin/accounts/{user}/delete', [AdminPageController::class, 'confirmDeleteAccount'])
+        ->name('admin.accounts.delete');
+    Route::delete('/admin/accounts/{user}', [AdminPageController::class, 'destroyAccount'])
+        ->name('admin.accounts.destroy');
     Route::get('/admin/settings', [AdminPageController::class, 'settings'])->name('admin.settings');
     Route::put('/admin/settings', [AdminPageController::class, 'updateSettings'])
         ->name('admin.settings.update');

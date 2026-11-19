@@ -18,6 +18,7 @@
             ['Reports', 'admin.reports'],
             ['Print List', 'admin.printlist'],
             ['User Activity', 'admin.user-activity'],
+            ['Manage Accounts', 'admin.accounts'],
             ['Settings', 'admin.settings'],
         ] as [$label, $routeName])
             <a

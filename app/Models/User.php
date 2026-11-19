@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -15,8 +16,10 @@ class User extends Authenticatable
 
     public const ROLE_ADMINISTRATOR = 'administrator';
 
+    public const DEACTIVATED_MESSAGE = 'This account has been deactivated. Please contact the parish office if you think this is a mistake.';
+
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -52,6 +55,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'last_activity_at' => 'datetime',
+            'deactivated_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -61,7 +65,23 @@ class User extends Authenticatable
      */
     public function routeNotificationForSms(): ?string
     {
-        return $this->mobile ? '0'.$this->mobile : null;
+        return $this->mobile && ! $this->trashed() ? '0'.$this->mobile : null;
+    }
+
+    /** Deleted accounts keep their name on parish records but get no more email. */
+    public function routeNotificationForMail(): ?string
+    {
+        return $this->trashed() ? null : $this->email;
+    }
+
+    public function isAdministrator(): bool
+    {
+        return $this->role === self::ROLE_ADMINISTRATOR;
+    }
+
+    public function isDeactivated(): bool
+    {
+        return $this->deactivated_at !== null;
     }
 
     public function massIntentions(): HasMany
