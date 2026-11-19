@@ -84,7 +84,7 @@
                 >
 
                     Intention Type
-                    <span class="text-red-500">*</span>
+                    <span class="text-red-500" data-required-for="intention_type">*</span>
 
                 </legend>
 
@@ -472,7 +472,7 @@
                 >
 
                     Intention for
-                    <span class="text-red-500">*</span>
+                    <span class="text-red-500" data-required-for="intention_for">*</span>
 
                 </label>
 
@@ -567,7 +567,7 @@
                 >
 
                     Select Date & Time
-                    <span class="text-red-500">*</span>
+                    <span class="text-red-500" data-required-for="schedule_id">*</span>
 
                 </label>
 
@@ -710,7 +710,7 @@
                 >
 
                     Mobile Number
-                    <span class="text-red-500">*</span>
+                    <span class="text-red-500" data-required-for="mobile">*</span>
 
                 </label>
 
@@ -777,7 +777,7 @@
                 >
 
                     Offering Amount
-                    <span class="text-red-500">*</span>
+                    <span class="text-red-500" data-required-for="offering_amount">*</span>
 
                 </label>
 
@@ -839,7 +839,7 @@
             <fieldset class="mb-6">
                 <legend class="block text-xl font-bold mb-2">
                     How will you give your offering?
-                    <span class="text-red-500">*</span>
+                    <span class="text-red-500" data-required-for="payment_method">*</span>
                 </legend>
 
                 <div class="grid gap-3 sm:grid-cols-2">
@@ -1230,6 +1230,41 @@
         }
     }
 
+</script>
+
+<script>
+    // Hide a field's red "*" once the field has been filled in.
+    (function () {
+        const markers = document.querySelectorAll('[data-required-for]');
+
+        function isFilled(name) {
+            const fields = document.querySelectorAll('[name="' + name + '"]');
+
+            return Array.from(fields).some(function (field) {
+                if (field.type === 'radio' || field.type === 'checkbox') {
+                    return field.checked;
+                }
+
+                return field.value.trim() !== '';
+            });
+        }
+
+        function update() {
+            markers.forEach(function (marker) {
+                marker.classList.toggle('hidden', isFilled(marker.dataset.requiredFor));
+            });
+        }
+
+        // The Mass schedule is filled in by script (no input event), so also re-check after clicks.
+        ['input', 'change'].forEach(function (type) {
+            document.addEventListener(type, update);
+        });
+        document.addEventListener('click', function () {
+            setTimeout(update, 0);
+        });
+
+        update();
+    })();
 </script>
 
 @endpush
