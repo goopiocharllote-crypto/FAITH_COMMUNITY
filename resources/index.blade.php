@@ -41,7 +41,7 @@
     <!-- NAVBAR -->
     <!-- ===================================================== -->
 
-    <header class="fixed top-0 left-0 right-0 z-40 px-4 md:px-8 pt-5 md:pt-6">
+    <header class="absolute top-0 left-0 right-0 z-40 px-4 md:px-8 pt-5 md:pt-6">
 
         <nav class="site-nav max-w-[1400px] mx-auto bg-white rounded-2xl nav-shadow px-5 lg:px-9 py-3">
 
