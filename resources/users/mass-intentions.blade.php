@@ -706,7 +706,7 @@
                     class="block text-xl font-bold mb-2"
                 >
 
-                    Mobile Number
+                    Mobile Number (Gcash No.)
                     <span class="text-red-500" data-required-for="mobile">*</span>
 
                 </label>
