@@ -239,7 +239,7 @@
             </div>
 
             <a
-                href="{{ route('mass-intentions.index') }}"
+                href="{{ route('users.announcements') }}"
                 class="
                     text-orange-700
                     font-semibold
