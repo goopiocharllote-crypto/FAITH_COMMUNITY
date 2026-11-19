@@ -237,39 +237,6 @@
 
                                     </form>
 
-
-                                    <form
-                                        method="POST"
-                                        action="{{
-                                            route(
-                                                'admin.donations.reject',
-                                                $donation
-                                            )
-                                        }}"
-                                    >
-
-                                        @csrf
-
-                                        @method('PATCH')
-
-                                        <button
-                                            type="submit"
-                                            class="
-                                                px-3
-                                                py-2
-                                                rounded-lg
-                                                bg-red-600
-                                                text-white
-                                                text-sm
-                                                font-semibold
-                                                hover:bg-red-700
-                                            "
-                                        >
-                                            Reject
-                                        </button>
-
-                                    </form>
-
                                 </div>
 
                             @else
