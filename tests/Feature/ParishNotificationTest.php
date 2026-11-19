@@ -44,7 +44,7 @@ class ParishNotificationTest extends TestCase
 
         Notification::assertSentTo($user, ParishUpdate::class, function (ParishUpdate $n, array $channels) use ($intention) {
             return $n->kind === 'mass_intention.submitted'
-                && $channels === ['mail', SmsChannel::class]
+                && $channels === [SmsChannel::class, 'mail']
                 && str_contains($n->subject, $intention->referenceNumber())
                 && collect($n->lines)->contains(fn ($line) => str_contains($line, 'pay your ₱100.00 offering by scanning the GCash QR code'));
         });
@@ -68,6 +68,25 @@ class ParishNotificationTest extends TestCase
         $this->actingAs($admin)->patch(route('admin.mass-intentions.reject', $intention));
 
         Notification::assertSentTo($intention->user, ParishUpdate::class, fn (ParishUpdate $n) => $n->kind === 'mass_intention.rejected');
+    }
+
+    public function test_approve_and_reject_sms_go_to_the_booking_form_number_even_without_an_account_mobile(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMINISTRATOR]);
+        $user = User::factory()->create(['mobile' => null]);
+        $approved = MassIntention::factory()->for($user)->create(['mobile' => '9171112222']);
+        $rejected = MassIntention::factory()->for($user)->create(['mobile' => '9173334444']);
+
+        $this->actingAs($admin)->patch(route('admin.mass-intentions.approve', $approved));
+        $this->actingAs($admin)->patch(route('admin.mass-intentions.reject', $rejected));
+
+        Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n, array $channels) => $n->kind === 'mass_intention.approved'
+            && $n->smsTo === '09171112222' && $channels[0] === SmsChannel::class
+            && mb_strlen($n->sms) <= 100);
+        Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n, array $channels) => $n->kind === 'mass_intention.rejected'
+            && $n->smsTo === '09173334444' && in_array(SmsChannel::class, $channels, true)
+            && mb_strlen($n->sms) <= 100);
     }
 
     public function test_prayer_requests_and_virtual_candles_send_confirmation_and_review_updates(): void

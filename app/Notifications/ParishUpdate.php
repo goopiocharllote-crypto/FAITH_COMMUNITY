@@ -45,12 +45,13 @@ class ParishUpdate extends Notification implements ShouldQueue
     {
         $channels = [];
 
-        if (! empty($notifiable->email)) {
-            $channels[] = 'mail';
-        }
-
+        // SMS goes first: if the email server fails, the text message has already been sent.
         if ($this->smsTo || $notifiable->routeNotificationFor('sms', $this)) {
             $channels[] = SmsChannel::class;
+        }
+
+        if (! empty($notifiable->email)) {
+            $channels[] = 'mail';
         }
 
         return $channels;
@@ -118,7 +119,7 @@ class ParishUpdate extends Notification implements ShouldQueue
         $approved = $intention->status === 'Approved';
         $when = $intention->mass_date->format('M j, Y g:i A');
 
-        return new self(
+        return (new self(
             'mass_intention.'.strtolower($intention->status),
             'Mass Intention '.strtolower($intention->status).' ('.$ref.')',
             $approved
@@ -129,35 +130,35 @@ class ParishUpdate extends Notification implements ShouldQueue
                 : 'Your Mass Intention '.$ref.' was not accepted. Please contact the parish office.',
             'View request status',
             route('users.my-request').'#mass-intentions',
-        );
+        ))->toBookingMobile($intention);
     }
 
     public static function massIntentionReadInChurch(MassIntention $intention): self
     {
         $ref = $intention->referenceNumber();
 
-        return new self(
+        return (new self(
             'mass_intention.read_in_church',
             'Mass Intention offered ('.$ref.')',
             ['Your Mass Intention for '.$intention->intention_for.' was read during Mass today.', 'Thank you for praying with our parish community.'],
             'Your Mass Intention '.$ref.' for '.$intention->intention_for.' was read at Mass today.',
             'View request status',
             route('users.my-request').'#mass-intentions',
-        );
+        ))->toBookingMobile($intention);
     }
 
     public static function massIntentionOfferingReceived(MassIntention $intention): self
     {
         $ref = $intention->referenceNumber();
 
-        return new self(
+        return (new self(
             'mass_intention.offering_received',
             'Offering received ('.$ref.')',
             ['The parish office received your ₱'.self::money($intention->offering_amount).' offering for Mass Intention '.$ref.'.', 'Thank you for your generosity.'],
             'Offering of P'.self::money($intention->offering_amount).' for Mass Intention '.$ref.' received. Thank you!',
             'View my transactions',
             route('mass-intentions.history'),
-        );
+        ))->toBookingMobile($intention);
     }
 
     // ------------------------------------------------------------------
@@ -234,6 +235,12 @@ class ParishUpdate extends Notification implements ShouldQueue
             'View my donations',
             route('donations.index'),
         );
+    }
+
+    /** Mass Intention updates go to the mobile number typed on the booking form, like the booking confirmation. */
+    private function toBookingMobile(MassIntention $intention): self
+    {
+        return $intention->mobile ? $this->textingNumber('0'.$intention->mobile) : $this;
     }
 
     private static function money(mixed $amount): string
