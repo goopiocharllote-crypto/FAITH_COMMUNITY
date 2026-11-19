@@ -24,6 +24,9 @@ class ParishUpdate extends Notification implements ShouldQueue
     /** Local-format number (09XXXXXXXXX) to text instead of the account's mobile, e.g. the one typed on a booking form. */
     public ?string $smsTo = null;
 
+    /** False for updates that go by email only (no text message). */
+    public bool $sendsSms = true;
+
     /**
      * @param  list<string>  $lines
      */
@@ -46,7 +49,7 @@ class ParishUpdate extends Notification implements ShouldQueue
         $channels = [];
 
         // SMS goes first: if the email server fails, the text message has already been sent.
-        if ($this->smsTo || $notifiable->routeNotificationFor('sms', $this)) {
+        if ($this->sendsSms && ($this->smsTo || $notifiable->routeNotificationFor('sms', $this))) {
             $channels[] = SmsChannel::class;
         }
 
@@ -55,6 +58,13 @@ class ParishUpdate extends Notification implements ShouldQueue
         }
 
         return $channels;
+    }
+
+    public function withoutSms(): self
+    {
+        $this->sendsSms = false;
+
+        return $this;
     }
 
     public function textingNumber(string $localNumber): self
@@ -204,7 +214,8 @@ class ParishUpdate extends Notification implements ShouldQueue
         $ref = $donation->paymentReference();
         $amount = self::money($donation->amount);
 
-        return new self(
+        // Email only: the parishioner gets a text when the admin approves the donation.
+        return (new self(
             'donation.submitted',
             'Donation pledge received ('.$ref.')',
             $donation->isOnline()
@@ -215,7 +226,7 @@ class ParishUpdate extends Notification implements ShouldQueue
                 : 'Donation '.$ref.' of P'.$amount.' recorded. Please give it at the parish office.',
             'View my donations',
             route('donations.index'),
-        );
+        ))->withoutSms();
     }
 
     public static function donationReviewed(Donation $donation): self

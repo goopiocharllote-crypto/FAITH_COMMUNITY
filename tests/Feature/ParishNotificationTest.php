@@ -116,19 +116,22 @@ class ParishNotificationTest extends TestCase
     public function test_admin_confirming_a_parish_donation_marks_it_paid_and_notifies(): void
     {
         Notification::fake();
-        $user = User::factory()->create();
+        $user = User::factory()->create(['mobile' => '9171234567']);
         $admin = User::factory()->create(['role' => User::ROLE_ADMINISTRATOR]);
 
         $this->actingAs($user)->post(route('donations.store'), ['amount' => '500', 'payment_method' => 'Cash']);
         $donation = Donation::query()->sole();
 
-        Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n) => $n->kind === 'donation.submitted'
+        // Submitting a donation is confirmed by email only; the text comes when the admin approves.
+        Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n, array $channels) => $n->kind === 'donation.submitted'
+            && $channels === ['mail']
             && collect($n->lines)->contains(fn ($line) => str_contains($line, 'bring your donation to the parish office')));
 
         $this->actingAs($admin)->patch(route('admin.donations.approve', $donation));
 
         $this->assertSame('Paid', $donation->fresh()->payment_status);
-        Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n) => $n->kind === 'donation.approved');
+        Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n, array $channels) => $n->kind === 'donation.approved'
+            && in_array(SmsChannel::class, $channels, true));
     }
 
     public function test_users_without_a_mobile_number_only_get_email(): void
