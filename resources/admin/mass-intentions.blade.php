@@ -71,11 +71,11 @@
             <table class="w-full min-w-[900px] text-left text-sm">
                 <thead class="border-b border-rose-100 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
                     <tr>
-                        <th scope="col" class="px-5 py-4">Reference No.</th>
-                        <th scope="col" class="px-5 py-4">Request / Parishioner</th>
-                        <th scope="col" class="px-5 py-4">Mass date &amp; time</th>
-                        <th scope="col" class="px-5 py-4">Status</th>
-                        <th scope="col" class="px-5 py-4">Action</th>
+                        <th scope="col" class="w-[14%] px-5 py-4">Reference No.</th>
+                        <th scope="col" class="w-[36%] px-5 py-4">Request / Parishioner</th>
+                        <th scope="col" class="w-[16%] whitespace-nowrap px-5 py-4">Mass date &amp; time</th>
+                        <th scope="col" class="w-[20%] px-5 py-4">Status</th>
+                        <th scope="col" class="w-[14%] px-5 py-4">Action</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-rose-100">
