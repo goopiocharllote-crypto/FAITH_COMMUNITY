@@ -1,7 +1,7 @@
 <section id="donations" class="scroll-mt-6 space-y-5">
     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <h3 class="text-xl font-bold text-slate-900">Make a Donation</h3>
-        <p class="mt-1 text-sm text-slate-600">Give online through GCash, or pledge now and give at the parish office. You will get an email and SMS confirmation.</p>
+        <p class="mt-1 text-sm text-slate-600">Give online through GCash. You will get an email confirmation, and a text once the parish office approves your donation.</p>
 
         <form method="POST" action="{{ route('donations.store') }}" class="mt-5 grid gap-4 md:grid-cols-2">
             @csrf
@@ -14,13 +14,6 @@
                         <span>
                             <span class="block font-semibold text-slate-900">Donate online · GCash</span>
                             <span class="mt-0.5 block text-sm text-slate-600">Scan the parish GCash QR code, pay, then upload your GCash receipt. The parish office confirms it.</span>
-                        </span>
-                    </label>
-                    <label class="flex cursor-pointer gap-3 rounded-xl border border-slate-300 p-4 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 has-[:checked]:ring-2 has-[:checked]:ring-blue-100">
-                        <input type="radio" name="payment_method" value="Cash" required class="mt-1 h-4 w-4 accent-blue-700" @checked(old('payment_method') === 'Cash')>
-                        <span>
-                            <span class="block font-semibold text-slate-900">Donate at the parish</span>
-                            <span class="mt-0.5 block text-sm text-slate-600">Pledge now and give cash at the parish office. The office confirms once received.</span>
                         </span>
                     </label>
                 </div>

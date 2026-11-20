@@ -119,13 +119,13 @@ class ParishNotificationTest extends TestCase
         $user = User::factory()->create(['mobile' => '9171234567']);
         $admin = User::factory()->create(['role' => User::ROLE_ADMINISTRATOR]);
 
-        $this->actingAs($user)->post(route('donations.store'), ['amount' => '500', 'payment_method' => 'Cash']);
+        $this->actingAs($user)->post(route('donations.store'), ['amount' => '500', 'payment_method' => 'GCash']);
         $donation = Donation::query()->sole();
 
         // Submitting a donation is confirmed by email only; the text comes when the admin approves.
         Notification::assertSentTo($user, ParishUpdate::class, fn (ParishUpdate $n, array $channels) => $n->kind === 'donation.submitted'
             && $channels === ['mail']
-            && collect($n->lines)->contains(fn ($line) => str_contains($line, 'bring your donation to the parish office')));
+            && collect($n->lines)->contains(fn ($line) => str_contains($line, 'Scan the GCash QR code')));
 
         $this->actingAs($admin)->patch(route('admin.donations.approve', $donation));
 

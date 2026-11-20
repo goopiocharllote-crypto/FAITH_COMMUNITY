@@ -156,7 +156,7 @@
                             </td>
                             <td class="px-5 py-4">
                                 @if ($massIntention->status === 'Pending')
-                                    <div class="flex flex-wrap gap-2">
+                                    <div class="flex flex-nowrap items-center gap-2 whitespace-nowrap">
                                         <form method="POST" action="{{ route('admin.mass-intentions.approve', $massIntention) }}">
                                             @csrf
                                             @method('PATCH')

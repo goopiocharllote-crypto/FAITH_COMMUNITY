@@ -158,34 +158,30 @@ class RequestCenterTest extends TestCase
         ])->assertRedirect(route('login'));
     }
 
-    public function test_user_can_pledge_a_donation_to_give_at_the_parish(): void
+    public function test_user_can_submit_a_gcash_donation(): void
     {
         $user = User::factory()->create();
 
         $this->actingAs($user)
             ->post(route('donations.store'), [
                 'amount' => '125.50',
-                'payment_method' => 'Cash',
+                'payment_method' => 'GCash',
                 'message' => 'Parish support',
             ])
-            ->assertRedirect(route('donations.index'))
             ->assertSessionHas('status');
 
         $this->assertDatabaseHas('donations', [
             'user_id' => $user->id,
             'amount' => '125.50',
-            'payment_method' => 'Cash',
-            'payment_status' => 'Pending',
+            'payment_method' => 'GCash',
             'message' => 'Parish support',
             'status' => 'Pending',
         ]);
-        $this->assertDatabaseCount('payments', 0);
 
         $this->actingAs($user)
             ->get(route('donations.index'))
             ->assertOk()
-            ->assertSee('Donate at the parish')
-            ->assertSee('Pay at parish office');
+            ->assertDontSee('Donate at the parish');
     }
 
     public function test_donation_validation_rejects_invalid_amount_and_payment_method(): void

@@ -90,7 +90,8 @@ class RequestCenterController extends Controller
     {
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1', 'max:99999999.99', 'decimal:0,2'],
-            'payment_method' => ['required', Rule::in([Donation::METHOD_PARISH, Donation::METHOD_ONLINE])],
+            // Donations are GCash only; cash at the parish office is no longer offered.
+            'payment_method' => ['required', Rule::in([Donation::METHOD_ONLINE])],
             'reference_number' => ['nullable', 'string', 'max:80'],
             'message' => ['nullable', 'string', 'max:1000'],
         ]);

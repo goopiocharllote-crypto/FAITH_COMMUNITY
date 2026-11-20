@@ -232,15 +232,22 @@ class OnlinePaymentTest extends TestCase
         $this->actingAs($admin)->get(route('payments.receipt', $noReceipt))->assertNotFound();
     }
 
-    public function test_pay_at_parish_donations_have_no_qr_payment(): void
+    public function test_donating_at_the_parish_is_no_longer_offered(): void
     {
         $user = User::factory()->create();
 
         $this->actingAs($user)
             ->post(route('donations.store'), ['amount' => '10', 'payment_method' => 'Cash'])
-            ->assertRedirect(route('donations.index'));
+            ->assertSessionHasErrors('payment_method');
 
-        $donation = Donation::query()->sole();
+        $this->assertDatabaseCount('donations', 0);
+        $this->actingAs($user)->get(route('donations.index'))->assertDontSee('Donate at the parish');
+    }
+
+    public function test_older_pay_at_parish_donations_have_no_qr_payment(): void
+    {
+        $user = User::factory()->create();
+        $donation = $user->donations()->create(['amount' => 10, 'payment_method' => Donation::METHOD_PARISH]);
         $this->assertDatabaseCount('payments', 0);
 
         $this->actingAs($user)

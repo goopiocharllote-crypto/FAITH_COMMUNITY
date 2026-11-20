@@ -333,7 +333,7 @@ class AuthenticationTest extends TestCase
             ->assertOk()
             ->assertSee('Make a Donation')
             ->assertSee('Donate online · GCash')
-            ->assertSee('Donate at the parish')
+            ->assertDontSee('Donate at the parish')
             ->assertSee(route('donations.store'));
 
         $this->get(route('donation'))
@@ -342,9 +342,9 @@ class AuthenticationTest extends TestCase
         $this->from(route('donations.index'))
             ->post(route('donations.store'), [
                 'amount' => 100,
-                'payment_method' => 'Cash',
+                'payment_method' => 'GCash',
             ])
-            ->assertRedirect(route('donations.index'))
+            ->assertRedirect(route('payments.donations.pay', \App\Models\Donation::query()->sole()))
             ->assertSessionHas('status');
     }
 
