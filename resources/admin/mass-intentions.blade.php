@@ -68,14 +68,14 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[900px] text-left text-sm">
+            <table class="w-full min-w-[1000px] table-fixed text-left text-sm">
                 <thead class="border-b border-rose-100 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
                     <tr>
-                        <th scope="col" class="w-[14%] px-5 py-4">Reference No.</th>
-                        <th scope="col" class="w-[36%] px-5 py-4">Request / Parishioner</th>
-                        <th scope="col" class="w-[16%] whitespace-nowrap px-5 py-4">Mass date &amp; time</th>
+                        <th scope="col" class="w-44 px-5 py-4">Reference No.</th>
+                        <th scope="col" class="px-5 py-4">Request / Parishioner</th>
+                        <th scope="col" class="w-[20%] whitespace-nowrap px-5 py-4">Mass date &amp; time</th>
                         <th scope="col" class="w-[20%] px-5 py-4">Status</th>
-                        <th scope="col" class="w-[14%] px-5 py-4">Action</th>
+                        <th scope="col" class="w-56 px-5 py-4">Action</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-rose-100">
@@ -84,7 +84,7 @@
                             <td class="whitespace-nowrap px-5 py-4 font-medium text-slate-700">
                                 MI-{{ $massIntention->created_at->format('Y') }}-{{ str_pad((string) $massIntention->id, 6, '0', STR_PAD_LEFT) }}
                             </td>
-                            <td class="px-5 py-4">
+                            <td class="break-words px-5 py-4">
                                 <p class="font-semibold text-slate-900">{{ $massIntention->intention_for }}</p>
                                 <p class="mt-1 text-slate-700">{{ $massIntention->user->name ?? 'Unknown parishioner' }}</p>
                                 <p class="text-xs text-slate-500">
@@ -120,7 +120,7 @@
                                 {{ $massIntention->mass_date->format('M d, Y') }}
                                 <p class="mt-1 text-xs text-slate-500">{{ $massIntention->mass_date->format('h:i A') }}</p>
                             </td>
-                            <td class="whitespace-nowrap px-5 py-4">
+                            <td class="px-5 py-4">
                                 @if ($massIntention->status === 'Approved')
                                     <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Approved</span>
                                 @elseif ($massIntention->status === 'Rejected')
